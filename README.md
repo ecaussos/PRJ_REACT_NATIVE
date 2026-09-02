@@ -1,6 +1,7 @@
 # 🚀 React Native Projects Portfolio
 
 Bem-vindo ao meu repositório de projetos desenvolvidos em **REACT NATIVE**! Este espaço foi criado para centralizar e organizar meus estudos, desafios de código e aplicações práticas utilizando o ecossistema React Native.
+
 ---
 
 ## 📂 Estrutura do Repositório
