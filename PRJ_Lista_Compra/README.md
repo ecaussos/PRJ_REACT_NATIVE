@@ -525,7 +525,7 @@ Abra o terminal na pasta do projeto e execute os comandos:
 * Dependências gerais do projeto
   ```bash
   npm install
-```
+  ```
 * Módulo de banco de dados local SQLite
   ```bash
   npx expo install expo-sqlite
