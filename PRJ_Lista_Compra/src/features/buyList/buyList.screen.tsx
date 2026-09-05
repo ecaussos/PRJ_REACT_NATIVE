@@ -191,12 +191,15 @@ export default function BuyListScreen() {
                   style={[styles.iconButton, styles.deleteButton]}
                   onPress={() => {
                     Alert.alert(
+                      // Mensagem
                       'Remover', `Deseja remover "${item.nm_product}" da lista?`,
                       [
+                        // Botão cancela
                         { text: 'Cancelar', style: 'cancel' },
-                        { 
-                          text: 'Remover',
+                        // Botão Remove
+                        { text: 'Remover',
                           style: 'destructive',
+                          // Chama a função para excluir
                           onPress: () => dispatch({ type: 'DELETE', payload: { id_list_buy: item.id_list_buy } })
                         }
                       ]

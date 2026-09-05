@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BuyListModel } from './buyList.model';
 import { BuyListIntent, BuyListState } from './buyList.types';
 
+// Função de gerenciamento dos componente na tela
 export function useBuyListViewModel() {
   // Estado centralizado gerenciando, carregamento e erros
   const [state, setState] = useState<BuyListState>({

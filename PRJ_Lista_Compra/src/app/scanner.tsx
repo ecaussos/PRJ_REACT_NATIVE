@@ -18,7 +18,7 @@ export default function QuickScanner () {
   };
   // Processamento do código de barra
   const handleScanSuccess = async (barcode: string) => {  //função assincrona (async) recebe o código de barra (barcode)
-    // Bloco tramento: Try: Tente | Cach: Capture (Erro)
+    // Bloco tratamento: Try: Tente | Cach: Capture (Erro)
     try {
       // 1. Valida se o produto existe no banco
       const product = await ProductModel.checkBarcode(barcode);

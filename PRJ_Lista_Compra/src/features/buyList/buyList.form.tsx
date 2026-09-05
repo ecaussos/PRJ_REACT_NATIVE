@@ -3,10 +3,14 @@ import { ActivityIndicator, Button, FlatList, Modal, Text, TextInput, TouchableO
 import BarcodeScannerScreen from './barcodeScannerScreen';
 import { styles } from './buyList.styles';
 
-// COMPONENTE DE BOTÕES DE AÇÃO
+// COMPONENTE DE BOTÕES DE AÇÃO ADICIONAR REGISTRO
+
+// Define as o contrato das propriedades do componentes - Botões adicionar registro
 interface BuyListActionsProps {
-  onOpenCamera: () => void;       // Busca Registro: Código de Barra
-  onOpenNameSearch: () => void;   // Busca Registro: Nome
+  // Armazena função/Não retornar valor - Abre câmera
+  onOpenCamera: () => void;
+  // Armazena função/Não retornar valor - Abre busca Nome
+  onOpenNameSearch: () => void;
 }
 // Função para mostrar os botões adicionar registro
 export function BuyListActions({ onOpenCamera, onOpenNameSearch }: BuyListActionsProps) {
@@ -33,7 +37,6 @@ interface BuyListCameraModalProps {
   onScanSuccess: (barcode: string) => void;
   onClose: () => void;
 }
-
 // função para mostrar a camera
 export function BuyListCameraModal({ visible, onScanSuccess, onClose }: BuyListCameraModalProps) {
   // MONTAGEM DA TELA
@@ -84,7 +87,6 @@ interface BuyListFormProps {
   onCloseQuantityModal: () => void;                     // Fecha a edição
 }
 
-//
 export function BuyListForm({
   // MODAL DA CÂMERA
   showCameraModal,                  // Mostra a câmera
@@ -145,13 +147,16 @@ export function BuyListForm({
               data={foundProducts}
               keyExtractor={(item) => String(item.id_product)}
               renderItem={({ item }) => (
+                // Defini o item como um botão
                 <TouchableOpacity
                   style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
                   onPress={() => onSelectProductToBuy(item)}
                 >
+                  {/* Apresentar os dados do registro */}
                   <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#222' }}>{item.nm_product}</Text>
                 </TouchableOpacity>
               )}
+              // Apresentar mensagem se não encontrar nenhum registro
               ListEmptyComponent={
                 productQuery.trim().length > 0 && !isSearching ? (
                   <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Nenhum produto encontrado.</Text>
@@ -180,7 +185,7 @@ export function BuyListForm({
               {editingQuantityItem?.nm_product}
             </Text>
 
-            {/* Caixa de texto para informar o novo valor */}
+            {/* Caixa de texto para editar o registro */}
             <TextInput
               style={styles.input}
               keyboardType="numeric"
@@ -190,9 +195,11 @@ export function BuyListForm({
               placeholderTextColor="#888"
               autoFocus
             />
-
+            {/* Botões de ação */}
             <View style={styles.modalButtonsContainer}>
+              {/* Botão salva registro */}
               <Button title="Salvar" onPress={onSaveQuantity} />
+              {/* Botão cancela operação registro */}
               <Button title="Cancelar" color="#6c757d" onPress={onCloseQuantityModal} />
             </View>
           </View>

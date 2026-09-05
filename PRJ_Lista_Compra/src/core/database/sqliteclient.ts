@@ -1,21 +1,38 @@
 import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './migrations';
 
-// Defina aqui o nome do arquivo do seu banco de dados local (ex: 'listbuy.db')
 const DATABASE_NAME = 'listbuy.db';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function getDBConnection(): Promise<SQLite.SQLiteDatabase> {
+  // 1. Se o banco já está aberto e pronto, retorna a instância
   if (dbInstance) {
     return dbInstance;
   }
 
-  // É aqui que o nome do banco de dados é informado:
-  dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME);
+  // 2. Se a inicialização já está em andamento, aguarda a mesma promessa
+  if (dbPromise) {
+    return dbPromise;
+  }
 
-  // Executa as migrações logo após abrir a conexão pela primeira vez
-  await runMigrations(dbInstance);
+  // 3. Inicia a promessa de conexão isolada
+  dbPromise = (async () => {
+    try {
+      const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
-  return dbInstance;
+      // Executa as migrações apenas uma vez durante a abertura
+      await runMigrations(db);
+
+      dbInstance = db;
+      return db;
+    } catch (error) {
+      // Se falhar, reseta a promessa para permitir novas tentativas
+      dbPromise = null;
+      throw error;
+    }
+  })();
+
+  return dbPromise;
 }

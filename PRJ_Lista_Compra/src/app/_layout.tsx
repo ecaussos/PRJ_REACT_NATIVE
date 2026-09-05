@@ -31,6 +31,11 @@ export default function RootLayout() {
         name="buyList" 
         options={{ title: 'Lista de Compras' }} 
       />
+      {/* Realizar Compra */}
+      <Stack.Screen 
+        name="buy" 
+        options={{ title: 'Realizar Compra' }} 
+      />
       {/* Produto */}
       <Stack.Screen 
         name="product" 

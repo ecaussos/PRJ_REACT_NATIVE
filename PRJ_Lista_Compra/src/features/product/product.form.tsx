@@ -31,6 +31,7 @@ export default function ProductForm({
   onSave,
   onCancel,
 }: ProductFormProps) {
+// MONTAGEM DA TELA
   return (
     // Card que agrupa os elementos visuais do formulário
     <View style={styles.formCard}>
