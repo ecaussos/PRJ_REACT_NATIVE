@@ -1,6 +1,9 @@
-// src/data/repositories/buyListRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { BuyListEntity, BuyListItemWithProductEntity } from '../entities/buyListEntity';
+import {
+  BuyListEntity,
+  BuyListItemWithProductEntity,
+  CreateBuyListDTO
+} from '../entities/buyListEntity';
 
 export class BuyListRepository {
 
@@ -34,8 +37,8 @@ export class BuyListRepository {
     return result || null;
   }
 
-  // Adicionar um novo item à lista de compras
-  async create(item: Omit<BuyListEntity, 'id_list_buy'>): Promise<void> {
+  // Adicionar um novo item à lista de compras usando o DTO
+  async create(item: CreateBuyListDTO): Promise<void> {
     const db = await getDBConnection();
     const query = `
       INSERT INTO list_buy (id_product, qt_product, dt_list_buy)

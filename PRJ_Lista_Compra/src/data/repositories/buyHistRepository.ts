@@ -1,18 +1,17 @@
 // src/data/repositories/buyHistRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { BuyHistEntity, BuyHistWithDetailsEntity } from '../entities/buyHistEntity';
+import { BuyHistWithDetailsEntity, CreateBuyHistDTO } from '../entities/buyHistEntity';
 
 export class BuyHistRepository {
 
   // Inserir um registro no histórico de compras (ao finalizar uma compra com ou sem lista)
-  async create(hist: BuyHistEntity): Promise<void> {
+  async create(hist: CreateBuyHistDTO): Promise<void> {
     const db = await getDBConnection();
     const query = `
-      INSERT INTO hist_buy (id_hist_buy, id_supplier, id_product, vl_product, qt_product, dt_list_buy, dt_hist_buy)
-      VALUES (?, ?, ?, ?, ?, ?, ?);
+      INSERT INTO hist_buy (id_supplier, id_product, vl_product, qt_product, dt_list_buy, dt_hist_buy)
+      VALUES (?, ?, ?, ?, ?, ?);
     `;
     await db.runAsync(query, [
-      hist.id_hist_buy,
       hist.id_supplier,
       hist.id_product,
       hist.vl_product,
@@ -43,13 +42,5 @@ export class BuyHistRepository {
     `;
     const result = await db.getAllAsync<BuyHistWithDetailsEntity>(query);
     return result;
-  }
-
-  // Buscar um registro específico de histórico pelo ID
-  async findById(id_hist_buy: string): Promise<BuyHistEntity | null> {
-    const db = await getDBConnection();
-    const query = `SELECT * FROM hist_buy WHERE id_hist_buy = ?;`;
-    const result = await db.getFirstAsync<BuyHistEntity>(query, [id_hist_buy]);
-    return result || null;
   }
 }

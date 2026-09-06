@@ -1,6 +1,10 @@
 // src/data/repositories/supplierRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { SupplierEntity } from '../entities/supplierEntity';
+import {
+  CreateSupplierDTO,
+  SupplierEntity,
+  UpdateSupplierDTO
+} from '../entities/supplierEntity';
 
 export class SupplierRepository {
 
@@ -20,8 +24,8 @@ export class SupplierRepository {
     return result || null;
   }
 
-  // Realizar o cadastro do fornecedor
-  async create(supplier: Omit<SupplierEntity, 'id_supplier'>): Promise<void> {
+  // Realizar o cadastro do fornecedor usando o DTO de criação
+  async create(supplier: CreateSupplierDTO): Promise<void> {
     const db = await getDBConnection();
     const query = `
       INSERT INTO supplier (nm_supplier)
@@ -30,18 +34,17 @@ export class SupplierRepository {
     await db.runAsync(query, [supplier.nm_supplier]);
   }
 
-  // Editar o cadastro do fornecedor (Corrigido com WHERE)
-  async update(id: number, data: { nm_supplier: string }) {
+  // Editar o cadastro do fornecedor usando o DTO de atualização
+  async update(id_supplier: number, supplier: UpdateSupplierDTO): Promise<void> {
     const db = await getDBConnection();
-    await db.runAsync(
-      'UPDATE supplier SET nm_supplier = ? WHERE id_supplier = ?;',
-      [data.nm_supplier, id]
-    );
+    const query = `UPDATE supplier SET nm_supplier = ? WHERE id_supplier = ?;`;
+    await db.runAsync(query, [supplier.nm_supplier, id_supplier]);
   }
 
-  // Excluir o cadastro do fornecedor (Corrigido para id_supplier)
-  async delete(id: number) {
+  // Excluir o cadastro do fornecedor pelo ID
+  async delete(id_supplier: number): Promise<void> {
     const db = await getDBConnection();
-    await db.runAsync('DELETE FROM supplier WHERE id_supplier = ?;', [id]);
+    const query = `DELETE FROM supplier WHERE id_supplier = ?;`;
+    await db.runAsync(query, [id_supplier]);
   }
 }

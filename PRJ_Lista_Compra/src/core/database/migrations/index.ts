@@ -6,6 +6,7 @@ import { up as v5 } from './v5_insert_group';
 import { up as v6 } from './v6_from_to_group';
 import { up as v7 } from './v7_insert_from_to';
 import { up as v8 } from './v8_hist_buy';
+import { up as v9 } from './v9_insert_product';
 
 export async function runMigrations(db: any) {
   // Habilita chave estrangeira
@@ -20,6 +21,6 @@ export async function runMigrations(db: any) {
   await v6(db);
   await v7(db);
   await v8(db);
-  
+  await v9(db);
   console.log('Migrações do SQLite executadas com sucesso!');
 }

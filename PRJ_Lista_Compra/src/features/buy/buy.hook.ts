@@ -136,6 +136,8 @@ export function useBuyViewModel() {
       // Retornar o objeto realizando a autalização
       return { ...prev, items: updatedItems };
     });
+    // Retornar sucesso
+    return true;
   };
 
   // 5. Remove registro da lista em memória utilizando o índice
@@ -167,6 +169,7 @@ export function useBuyViewModel() {
           id_supplier: id_supplier,
           qt_product: item.qt_product,
           vl_product: item.vl_product,
+          dt_list_buy: item.dt_list_buy || currentDate,
           dt_hist_buy: currentDate,
         });
         // Valida se o registro existe na Lista de compra

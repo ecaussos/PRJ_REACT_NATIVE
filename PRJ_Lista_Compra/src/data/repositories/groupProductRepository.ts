@@ -1,6 +1,10 @@
 // src/data/repositories/groupProductRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { GroupProductEntity } from '../entities/groupProductEntity';
+import {
+  CreateGroupProductDTO,
+  GroupProductEntity,
+  UpdateGroupProductDTO
+} from '../entities/groupProductEntity';
 
 export class GroupProductRepository {
 
@@ -20,18 +24,18 @@ export class GroupProductRepository {
     return result || null;
   }
 
-  // Criar um novo grupo de produtos
-  async create(group: Omit<GroupProductEntity, 'id_group'>): Promise<void> {
+  // Criar um novo grupo de produtos usando o DTO de criação
+  async create(group: CreateGroupProductDTO): Promise<void> {
     const db = await getDBConnection();
     const query = `INSERT INTO group_product (nm_group) VALUES (?);`;
     await db.runAsync(query, [group.nm_group]);
   }
 
-  // Atualizar um grupo de produtos existente
-  async update(id_group: number, group: { nm_group: string }): Promise<void> {
+  // Atualizar um grupo de produtos usando o DTO de atualização
+  async update(id_group: number, group: UpdateGroupProductDTO): Promise<void> {
     const db = await getDBConnection();
     const query = `UPDATE group_product SET nm_group = ? WHERE id_group = ?;`;
-    await db.runAsync(query, [group.nm_group, id_group]);
+    await db.runAsync(query, [group.nm_group ?? null, id_group]);
   }
 
   // Excluir um grupo de produtos pelo ID

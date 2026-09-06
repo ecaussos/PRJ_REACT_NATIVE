@@ -1,6 +1,11 @@
 // src/data/repositories/productRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { ProductEntity } from '../entities/productEntity';
+import {
+  CreateProductDTO,
+  ProductEntity,
+  ProductWithGroupEntity,
+  UpdateProductDTO
+} from '../entities/productEntity';
 
 export class ProductRepository {
 
@@ -12,8 +17,8 @@ export class ProductRepository {
     return result || null;
   }
 
-  // Listar todos os produtos cadastrados
-  async findAll(): Promise<any[]> {
+  // Listar todos os produtos cadastrados com os nomes dos grupos (JOIN)
+  async findAll(): Promise<ProductWithGroupEntity[]> {
     const db = await getDBConnection();
     const query = `
       SELECT 
@@ -26,7 +31,7 @@ export class ProductRepository {
       LEFT JOIN group_product g ON p.id_group = g.id_group
       ORDER BY p.nm_product ASC;
     `;
-    const result = await db.getAllAsync(query);
+    const result = await db.getAllAsync<ProductWithGroupEntity>(query);
     console.log('--- DADOS DA TABELA PRODUCT ---', JSON.stringify(result, null, 2));
     return result;
   }
@@ -40,7 +45,7 @@ export class ProductRepository {
   }
 
   // Buscar produtos pelo nome (com LIKE para busca parcial)
-  async findByName(nameQuery: string): Promise<any[]> {
+  async findByName(nameQuery: string): Promise<Pick<ProductEntity, 'id_product' | 'nm_product'>[]> {
     const db = await getDBConnection();
     const query = `
       SELECT 
@@ -50,13 +55,11 @@ export class ProductRepository {
       WHERE nm_product LIKE ?
       ORDER BY nm_product ASC;
     `;
-    const result = await db.getAllAsync(query, [`%${nameQuery}%`]);
-    return result;
+    return await db.getAllAsync<Pick<ProductEntity, 'id_product' | 'nm_product'>>(query, [`%${nameQuery}%`]);
   }
 
-
-  // Cadastrar um novo produto
-  async create(product: Omit<ProductEntity, 'id_product'>): Promise<void> {
+  // Cadastrar um novo produto usando o DTO de criação
+  async create(product: CreateProductDTO): Promise<void> {
     const db = await getDBConnection();
     const query = `
       INSERT INTO product (nm_product, id_group, cd_product_gtin)
@@ -65,22 +68,29 @@ export class ProductRepository {
     await db.runAsync(query, [
       product.nm_product,
       product.id_group,
-      product.cd_product_gtin
+      product.cd_product_gtin ?? null // Evita undefined no SQLite
     ]);
   }
 
-  // Editar o cadastro do produto
-  async update(id: number, data: { nm_product: string; id_group: number; cd_product_gtin: string }) {
+  // Editar o cadastro do produto usando o DTO de atualização
+  async update(id_product: number, product: UpdateProductDTO): Promise<void> {
     const db = await getDBConnection();
-    await db.runAsync(
-      'UPDATE product SET nm_product = ?, id_group = ?, cd_product_gtin = ? WHERE id_product = ?;',
-      [data.nm_product, data.id_group, data.cd_product_gtin, id]
-    );
+    const query = `
+      UPDATE product 
+      SET nm_product = ?, id_group = ?, cd_product_gtin = ? 
+      WHERE id_product = ?;
+    `;
+    await db.runAsync(query, [
+      product.nm_product, 
+      product.id_group, 
+      product.cd_product_gtin ?? null, 
+      id_product
+    ]);
   }
 
-  // Excluir o cadastro do produto
-  async delete(id: number) {
+  // Excluir o cadastro do produto pelo ID
+  async delete(id_product: number): Promise<void> {
     const db = await getDBConnection();
-    await db.runAsync('DELETE FROM product WHERE id_product = ?;', [id]);
+    await db.runAsync('DELETE FROM product WHERE id_product = ?;', [id_product]);
   }
 }
