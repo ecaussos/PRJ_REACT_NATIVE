@@ -1,56 +1,26 @@
 // src/features/supplier/supplier.screen.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import SupplierForm from './supplier.form';
 import { useSupplierViewModel } from './supplier.hook';
 import { styles } from './supplier.styles';
 
 export default function SupplierScreen() {
-  // Obtém o estado atual (lista de grupos, carregamento, erros) e a função dispatch do hook ViewModel
-  const { state, dispatch } = useSupplierViewModel();  
-  // Estados locais para controlar os inputs do formulário, o texto de pesquisa e o ID em modo de edição
-  const [name, setName] = useState('');
-  const [searchText, setSearchText] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  // Reseta os campos do formulário e limpa o ID de edição, 
-  const resetForm = () => {
-    setEditingId(null);
-    setName('');
-  };
+  // Obtém o estado atual, estado do formulário e as funções de ação do ViewModel
+  const { state, form, saveSupplier, dispatch } = useSupplierViewModel();  
+
   // Valida e submete o formulário, disparando uma intenção (CREATE ou UPDATE) para o ViewModel
-  const handleSave = () => {
-    // Validação para garantir que o nome do grupo não está vazio
-    if (!name.trim()) {
-      Alert.alert('Atenção', 'Preencha o nome do fornecedor!');
-      return;
+  const handleSave = async () => {
+    try {
+      const message = await saveSupplier();
+      // Gerar alerta informativo  
+      Alert.alert('Sucesso', message);
+    } catch (error: any) {
+      // Captura o erro disparado pela verificação e exibe no popup de aviso
+      Alert.alert('Aviso', error.message || 'Erro ao salvar o fornecedor.');
     }
-    // Se houver um ID em edição, despacha a ação de atualização
-    if (editingId !== null) {
-      dispatch({
-        type: 'UPDATE',
-        payload: {
-          id_supplier: editingId,
-          nm_supplier: name.trim(),
-        },
-      });
-      Alert.alert('Sucesso', 'Fornecedor atualizado com sucesso!');
-    // Caso contrário, despacha a ação de criação de um novo registro
-    } else {
-      dispatch({
-        type: 'CREATE',
-        payload: {
-          nm_supplier: name.trim(),
-        },
-      });
-      Alert.alert('Sucesso', 'Fornecedor cadastrado com sucesso!');
-    }
-    resetForm();
   };
-  // Filtra a lista de grupos em tempo real com base no texto digitado na pesquisa
-  const filteredSuppliers = state.suppliers.filter(item => 
-    item.nm_supplier.toLowerCase().includes(searchText.toLowerCase())
-  );
+
   // MONTAGEM DA TELA
   return (
     <View style={styles.container}>
@@ -60,45 +30,43 @@ export default function SupplierScreen() {
       {state.loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
       {/* Exibição de mensagens de erro, caso ocorram */}
       {state.error && <Text style={styles.error}>{state.error}</Text>}
+
       {/* Componente isolado do formulário de cadastro e edição */}
       <SupplierForm
-        name={name}
-        setName={setName}
-        editingId={editingId}
+        name={form.name}
+        setName={form.setName}
+        isEditing={form.isEditing}
         onSave={handleSave}
-        onCancel={resetForm}
+        onCancel={form.resetForm}
       />
       {/* Subtítulo da seção de listagem */}
       <Text style={styles.subtitle}>Fornecedores Cadastrados</Text>
-      {/* Caixa de texto para pesquisar grupos na lista */}      
+      {/* Caixa de texto para pesquisar grupos na lista */}
       <TextInput
         style={styles.input}
         placeholder="Pesquisar Fornecedor"
-        value={searchText}
-        onChangeText={setSearchText}
+        value={form.searchText}
+        onChangeText={form.setSearchText}
       />
       {/* Lista (FlatList) para renderizar os registros cadastrados e filtrados */}
       <FlatList
-        data={filteredSuppliers}
+        data={state.suppliers}
         keyExtractor={(item) => String(item.id_supplier)}
         renderItem={({ item }) => (
           <View style={styles.itemCard}>
             <View style={styles.itemInfo}>
-              {/* Apresenta a lista com campos*/}
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.ItemList}>{item.nm_supplier}</Text>
+              {/* Apresenta a lista com campos */}
+              <View style={styles.textContainer}>
+                <Text style={styles.itemList}>{item.nm_supplier}</Text>
               </View>
               {/* Container dos botões de ação */}
               <View style={styles.actionButtonsContainer}>
                 {/* Botão de Edição: preenche o formulário com os dados do item selecionado */}
                 <TouchableOpacity 
                   style={[styles.iconButton, styles.editButton]} 
-                  onPress={() => {
-                    setEditingId(item.id_supplier);
-                    setName(item.nm_supplier);
-                  }}
+                  onPress={() => form.startEditing(item.id_supplier, item.nm_supplier)}
                 >
-                  {/* Ícone botão de Edição*/}
+                  {/* Ícone botão de Edição */}
                   <MaterialCommunityIcons name="pencil-outline" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
                 {/* Botão de Exclusão: exibe alerta de confirmação antes de remover o registros */}
@@ -113,13 +81,20 @@ export default function SupplierScreen() {
                         { 
                           text: 'Excluir', 
                           style: 'destructive',
-                          onPress: () => dispatch({ type: 'DELETE', payload: item.id_supplier }) 
+                          onPress: async () => {
+                            try {
+                              await dispatch({ type: 'DELETE', payload: item.id_supplier });
+                              Alert.alert('Sucesso', 'Fornecedor excluído com sucesso!');
+                            } catch (error: any) {
+                              Alert.alert('Erro', error.message || 'Erro ao excluir o fornecedor.');
+                            }
+                          } 
                         }
                       ]
                     );
                   }}
                 >
-                  {/* Ícone botão de Exclusão*/}
+                  {/* Ícone botão de Exclusão */}
                   <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>

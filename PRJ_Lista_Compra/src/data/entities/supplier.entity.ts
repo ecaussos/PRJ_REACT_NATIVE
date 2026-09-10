@@ -10,4 +10,4 @@ export interface SupplierEntity {
 export type CreateSupplierDTO = Omit<SupplierEntity, 'id_supplier'>;
 
 // 3. DTO para atualização de registros existentes
-export type UpdateBuyListDTO = Partial<Omit<SupplierEntity, 'id_supplier'>>;
+export type UpdateSupplierDTO = CreateSupplierDTO;

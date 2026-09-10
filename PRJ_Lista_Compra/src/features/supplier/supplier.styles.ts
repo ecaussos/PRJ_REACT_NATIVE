@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
   },
   // Estilo do título principal da tela
   title: { 
-    fontSize: 40, 
+    fontSize: 32, 
     fontWeight: 'bold', 
     marginBottom: 12, 
     textAlign: 'center', 
@@ -48,6 +48,10 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
+  // Espaçamento superior do container do botão cancelar
+  cancelButtonContainer: {
+    marginTop: 8,
+  },
   // Estilo padrão para as caixas de texto (Inputs)
   input: {
     backgroundColor: '#fff',
@@ -77,6 +81,11 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center' 
   },
+  // Container de texto com ajuste flex
+  textContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
   // Container que organiza os botões de ícone (editar e excluir) lado a lado
   actionButtonsContainer: { 
     flexDirection: 'row', 
@@ -104,7 +113,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FF0000' 
   },
   // Estilo do nome exibido no card da lista
-  ItemList: { 
+  itemList: { 
     fontSize: 16, 
     fontWeight: 'bold', 
     color: '#222' 

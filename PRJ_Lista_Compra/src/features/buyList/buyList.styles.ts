@@ -109,7 +109,13 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold', 
     color: '#222' 
   },
-  // Detalhes secundários do item na lista
+  // Texto exibido na lista quando não há cadastrados
+  emptyText: { 
+    textAlign: 'center', 
+    color: '#888', 
+    marginTop: 20 
+  },
+  // Estilo do texto exibido na lista quando não há produtos cadastrados
   details: { 
     fontSize: 12, 
     color: '#666', 
@@ -121,12 +127,6 @@ export const styles = StyleSheet.create({
     color: '#007AFF',
     marginTop: 6,
     fontWeight: '600',
-  },
-  // Texto exibido na lista quando não há produtos cadastrados
-  emptyText: { 
-    textAlign: 'center', 
-    color: '#888', 
-    marginTop: 20 
   },
   // Rodapé com botão
   footer: {
@@ -173,8 +173,7 @@ export const styles = StyleSheet.create({
     gap: 8
   },
 
-  // CAIXA BOTÇÕES ADICIONAR PRODUTO -> CÓDIGO OU NOME
-
+  // BOTOÇÕES ADICIONAR PRODUTO
   // Caixa externa agrupadora dos botões com borda e efeito Fieldset
   sectionContainer: {
     borderWidth: 1,

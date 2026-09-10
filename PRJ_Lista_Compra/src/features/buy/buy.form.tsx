@@ -1,20 +1,20 @@
 // src/features/buy/buy.form.tsx
 import { useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ProductEntity } from '../../data/entities/product.entity';
 import { styles } from './buy.styles';
-
+import {
+  BuyActionsProps,
+  BuyAddOptionsProps,
+  BuyItemModalProps,
+  BuyNameSearchModalProps,
+  FinishBuyModalProps,
+} from './buy.types';
 
 // COMPONENTE DE BOTÕES DE AÇÃO - Lista/Produto
-// Define o formato das propriedades que o formulário recebe da tela - Botões de ação
-interface BuyActionsProps {
-  // Abre a lista de compra
-  onOpenBuyList: () => void;
-  // Aciona as opções de  ára adicionar registro
-  onToggleAddOptions: () => void;
-}
-// Componente do formulário para Listar e Adicionar os registros
+// Componente do formulário para Listar e Adicionar os registros[cite: 3]
 export function BuyActions({ onOpenBuyList, onToggleAddOptions }: BuyActionsProps) {
-  // MONTAGEM DA TELA
+  // MONTAGEM DA TELA[cite: 3]
   return (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>Selecione a opção</Text>
@@ -33,16 +33,9 @@ export function BuyActions({ onOpenBuyList, onToggleAddOptions }: BuyActionsProp
 }
 
 // COMPONENTE DE BOTÕES DE AÇÃO - Câmera/Nome
-// Define o contrato das propriedades do componentes - Botões adicionar registro
-interface BuyAddOptionsProps {
-  // Armazena função/Não retornar valor - Abre câmera
-  onOpenCamera: () => void;
-  // Armazena função/Não retornar valor - Abre busca Nome
-  onOpenNameSearch: () => void;
-}
-// Função para mostrar os botões adicionar registro
+// Função para mostrar os botões adicionar registro[cite: 3]
 export function BuyAddActions({ onOpenCamera, onOpenNameSearch }: BuyAddOptionsProps) {
-  // MONTAGEM DA TELA
+  // MONTAGEM DA TELA[cite: 3]
   return (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>Adicionar Produto</Text>
@@ -61,22 +54,18 @@ export function BuyAddActions({ onOpenCamera, onOpenNameSearch }: BuyAddOptionsP
 }
 
 // COMPONENTE EDIÇÃO DE REGISTROS - Produto/Quantidade/Valor
-// Define o contrato das propriedades dos componentes - Itens da Lista
-interface BuyItemModalProps {
-  //Defini variáveis e as propriedades
-  visible: boolean;
-  item: { nm_product: string; qt_product: number } | null;
-  quantityText: string;
-  valueText: string;
-  // Define funções e o parâmetros
-  onChangeQuantity: (text: string) => void;                   
-  onChangeValue: (text: string) => void;
-  onSave: () => void;
-  onClose: () => void;
-}
-// Função para mostrar a edição do registro
-export function BuyItemModal({ visible, item, quantityText, valueText, onChangeQuantity, onChangeValue, onSave, onClose }: BuyItemModalProps) {
-// MONTAGEM DA TELA
+// Função para mostrar a edição do registro[cite: 3]
+export function BuyItemModal({
+  visible,
+  item,
+  quantityText,
+  valueText,
+  onChangeQuantity,
+  onChangeValue,
+  onSave,
+  onClose,
+}: BuyItemModalProps) {
+  // MONTAGEM DA TELA[cite: 3]
   return (
     <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -95,7 +84,7 @@ export function BuyItemModal({ visible, item, quantityText, valueText, onChangeQ
             onChangeText={onChangeQuantity}
             placeholder="Quantidade"
           />
-           {/* Caixa de texto para alterar o registro */}
+          {/* Caixa de texto para alterar o registro */}
           <Text style={styles.label}>Valor Unitário (R$):</Text>
           <TextInput
             style={styles.input}
@@ -119,27 +108,18 @@ export function BuyItemModal({ visible, item, quantityText, valueText, onChangeQ
 }
 
 // COMPONENTE DE FINALIZA - Compra/Fornecedor
-// Define o contrato das propriedades dos componentes - Finaliza Compra
-interface FinishBuyModalProps {
-  //Defini variáveis e as propriedades
-  visible: boolean;
-  suppliers: any[];
-  // Define funções e o parâmetros
-  onSelectSupplier: (supplier: any) => void;
-  onClose: () => void;
-}
-// Função para mostrar a edição do registro
+// Função para mostrar a edição do registro[cite: 3]
 export function FinishBuyModal({ visible, suppliers, onSelectSupplier, onClose }: FinishBuyModalProps) {
-  // MONTAGEM DA TELA
+  // MONTAGEM DA TELA[cite: 3]
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { maxHeight: '70%' }]}>
           <Text style={styles.modalTitle}>Selecione o Fornecedor</Text>
-           {/* Container dos registros*/}
+          {/* Container dos registros*/}
           <FlatList
             data={suppliers}
-            keyExtractor={(item) => String(item.id_supplier)}
+            keyExtractor={item => String(item.id_supplier)}
             renderItem={({ item }) => (
               // Defini o item como um botão
               <TouchableOpacity
@@ -151,7 +131,11 @@ export function FinishBuyModal({ visible, suppliers, onSelectSupplier, onClose }
               </TouchableOpacity>
             )}
             // Apresentar mensagem se não encontrar nenhum registro
-            ListEmptyComponent={<Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Nenhum fornecedor cadastrado.</Text>}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>
+                Nenhum fornecedor cadastrado.
+              </Text>
+            }
           />
           {/* Botões de ação */}
           <View style={{ marginTop: 15 }}>
@@ -164,54 +148,53 @@ export function FinishBuyModal({ visible, suppliers, onSelectSupplier, onClose }
   );
 }
 
-//COMPONENTE BUSCA REGISTRO POR NOME
-// Define o contrato das propriedades dos componentes - Busca registro por nome
-interface BuyNameSearchModalProps {
-  //Defini variáveis e as propriedades
-  visible: boolean;
-    // Define funções e o parâmetros
-  onSelectProduct: (product: any) => void;
-  onClose: () => void;
-  onSearchProducts: (query: string) => Promise<any[]>;
-}
-// Função para mostrar a busca do registro
-export function BuyNameSearchModal({ visible, onSelectProduct, onClose, onSearchProducts }: BuyNameSearchModalProps) {
-  const [query, setQuery] = useState('');                       // Cria variável de estado
-  const [results, setResults] = useState<any[]>([]);            // Cria variável de resultado para guardar registros
-  const [loading, setLoading] = useState(false);                // Cria variável de carregamento de tela
-  // Função assicrona para receber texto digitado
+// COMPONENTE BUSCA REGISTRO POR NOME
+// Função para mostrar a busca do registro[cite: 3]
+export function BuyNameSearchModal({
+  visible,
+  onSelectProduct,
+  onClose,
+  onSearchProducts,
+}: BuyNameSearchModalProps) {
+  const [query, setQuery] = useState(''); // Cria variável de estado[cite: 3]
+  const [results, setResults] = useState<Array<Pick<ProductEntity, 'id_product' | 'nm_product'>>>([]); // Cria variável de resultado para guardar registros[cite: 3]
+  const [loading, setLoading] = useState(false); // Cria variável de carregamento de tela[cite: 3]
+
+  // Função assicrona para receber texto digitado[cite: 3]
   const handleSearch = async (text: string) => {
-    // Atualiza com o texto digitado
-    setQuery(text);                                             
-    // Se texto digitado menor que 2
+    // Atualiza com o texto digitado[cite: 3]
+    setQuery(text);
+    // Se texto digitado menor que 2[cite: 3]
     if (text.trim().length < 2) {
-      // Limpa a tela de resultado
-      setResults([]);                                           
+      // Limpa a tela de resultado[cite: 3]
+      setResults([]);
       return;
     }
-    // Ativa: Indicador visual de carregamento (Spinner)
-    setLoading(true);                                           
-    // Bloco tratamento: Try: Tente | Cach: Capture (Erro)
+    // Ativa: Indicador visual de carregamento (Spinner)[cite: 3]
+    setLoading(true);
+    // Bloco tratamento: Try: Tente | Cach: Capture (Erro)[cite: 3]
     try {
       const data = await onSearchProducts(text);
       setResults(data);
-    // Se ocorrer algum erro
+      // Se ocorrer algum erro[cite: 3]
     } catch (error) {
-      // Gera alerta informativo
+      // Gera alerta informativo[cite: 3]
       console.error('Erro na busca de produtos:', error);
-    // Se der erro ou não
+      // Se der erro ou não[cite: 3]
     } finally {
-      // Desativa: Indicador visual de carregamento (Spinner)
+      // Desativa: Indicador visual de carregamento (Spinner)[cite: 3]
       setLoading(false);
     }
   };
-  // Função para limpar dos dodos recebidos e limpar e fehcar a tela
+
+  // Função para limpar dos dodos recebidos e limpar e fehcar a tela[cite: 3]
   const handleClose = () => {
     setQuery('');
     setResults([]);
     onClose();
   };
-  // MONTAGEM DA TELA
+
+  // MONTAGEM DA TELA[cite: 3]
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
       <View style={styles.modalOverlay}>
@@ -242,7 +225,9 @@ export function BuyNameSearchModal({ visible, onSelectProduct, onClose, onSearch
               >
                 {/* Apresentar os dados do registro */}
                 <Text style={{ fontSize: 16, fontWeight: '600', color: '#222' }}>{item.nm_product}</Text>
-                {item.nm_group && <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{item.nm_group}</Text>}
+                {(item as any).nm_group && (
+                  <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{(item as any).nm_group}</Text>
+                )}
               </TouchableOpacity>
             )}
             // Apresentar mensagem se não encontrar nenhum registro

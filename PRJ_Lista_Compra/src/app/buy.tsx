@@ -1,6 +1,6 @@
 // app/buyList.tsx
-import BuyHistScreen from '../features/buy/buy.screen';
+import BuyScreen from '../features/buy/buy.screen';
 
 export default function Page() {
-  return <BuyHistScreen />;
+  return <BuyScreen />;
 }

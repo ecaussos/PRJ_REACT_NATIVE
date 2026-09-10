@@ -1,20 +1,18 @@
 // src/features/buyList/buyList.form.tsx
+import React from 'react';
 import { ActivityIndicator, Button, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import BarcodeScannerScreen from './barcodeScannerScreen';
+import BarcodeScannerScreen from '../scannerBarcode/scannerBarcode.screen';
 import { styles } from './buyList.styles';
+import { BuyListFormProps } from './buyList.types';
 
-// COMPONENTE DE BOTÕES DE AÇÃO ADICIONAR REGISTRO
-
-// Define as o contrato das propriedades do componentes - Botões adicionar registro
-interface BuyListActionsProps {
-  // Armazena função/Não retornar valor - Abre câmera
-  onOpenCamera: () => void;
-  // Armazena função/Não retornar valor - Abre busca Nome
-  onOpenNameSearch: () => void;
+// Botões para adicionar produtos
+export interface BuyListActionsProps {
+  onOpenCamera: () => void;         // Câmera para leitura de código de barras
+  onOpenNameSearch: () => void;     // Consulta de produto por nome
 }
-// Função para mostrar os botões adicionar registro
-export function BuyListActions({ onOpenCamera, onOpenNameSearch }: BuyListActionsProps) {
-  // MONTAGEM DA TELA
+
+// Modal com os botões para adicionar produtos
+export function BuyListActions({ onOpenCamera, onOpenNameSearch }: BuyListActionsProps): React.JSX.Element {
   return (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>Adicionar Produto</Text>
@@ -31,15 +29,14 @@ export function BuyListActions({ onOpenCamera, onOpenNameSearch }: BuyListAction
   );
 }
 
-// COMPONENTE ISOLADO DO MODAL DA CÂMERA (REUTILIZÁVEL)
-interface BuyListCameraModalProps {
+// Modal Câmera para leitura código de barra
+export interface BuyListCameraModalProps {
   visible: boolean;
   onScanSuccess: (barcode: string) => void;
   onClose: () => void;
 }
-// função para mostrar a camera
-export function BuyListCameraModal({ visible, onScanSuccess, onClose }: BuyListCameraModalProps) {
-  // MONTAGEM DA TELA
+
+export function BuyListCameraModal({ visible, onScanSuccess, onClose }: BuyListCameraModalProps): React.JSX.Element {
   return (
     <Modal
       visible={visible}
@@ -61,55 +58,30 @@ export function BuyListCameraModal({ visible, onScanSuccess, onClose }: BuyListC
   );
 }
 
-// COMPONENTE PRINCIPAL DE MODAIS
-interface BuyListFormProps {
-  // Props do Modal da Câmera
-  showCameraModal: boolean;                             // Visibilidade da câmera
-  onScanSuccess: (barcode: string) => void;             // Sucesso no escaneamento
-  onCloseCameraModal: () => void;                       // Fecha a câmera
-  
-  // Props do Modal de Busca por Nome
-  showNameSearchModal: boolean;                         // Visibilidade da busca por nome
-  productQuery: string;                                 // Texto da busca
-  foundProducts: any[];                                 // Produtos encontrados
-  isSearching: boolean;                                 // Status de carregamento
-  onSearchProductQueryChange: (query: string) => void;  // Atualiza a busca
-  onSelectProductToBuy: (product: any) => void;         // Seleciona o produto
-  onCloseNameSearchModal: () => void;                   // Fecha a busca
-
-  // Props do Modal de Edição de Quantidade
-  editingQuantityItem: { id_list_buy: number;
-                         nm_product: string;
-                         qt_product: number } | null;   // Item em edição
-  newQuantityText: string;                              // Texto da quantidade
-  onChangeQuantityText: (text: string) => void;         // Atualiza a quantidade
-  onSaveQuantity: () => void;                           // Salva a quantidade
-  onCloseQuantityModal: () => void;                     // Fecha a edição
-}
-
+// MODAIS PRINCIPAIS PARA TELA DE LISTA DE COMPRA
 export function BuyListForm({
   // MODAL DA CÂMERA
-  showCameraModal,                  // Mostra a câmera
-  onScanSuccess,                    // Sucesso na leitura
-  onCloseCameraModal,               // Fecha a câmera
+  showCameraModal,
+  onScanSuccess,
+  onCloseCameraModal,
 
   // MODAL DE BUSCA POR NOME
-  showNameSearchModal,              // Mostra a busca
-  productQuery,                     // Texto da busca
-  foundProducts,                    // Produtos encontrados
-  isSearching,                      // Status de carregamento
-  onSearchProductQueryChange,       // Atualiza busca 
-  onSelectProductToBuy,             // Seleciona o produto
-  onCloseNameSearchModal,           // Fecha a busca
+  showNameSearchModal,
+  productQuery,
+  foundProducts,
+  isSearching,
+  onSearchProductQueryChange,
+  onSelectProductToBuy,
+  onCloseNameSearchModal,
 
   // MODAL DE ATUALIZAR QUANTIDADE
-  editingQuantityItem,              // Item em edição
-  newQuantityText,                  // Texto da quantidade
-  onChangeQuantityText,             // Atualiza quantidade
-  onSaveQuantity,                   // Salva a alteração
-  onCloseQuantityModal,             // Fecha a edição
-}: BuyListFormProps) {
-  // MONTAGEM DA TELA
+  editingQuantityItem,
+  newQuantityText,
+  onChangeQuantityText,
+  onSaveQuantity,
+  onCloseQuantityModal,
+}: BuyListFormProps): React.JSX.Element {
+
   return (
     <>
       {/* MODAL DA CÂMERA */}
@@ -130,7 +102,7 @@ export function BuyListForm({
           <View style={[styles.modalContent, { maxHeight: '80%' }]}>
             <Text style={styles.modalTitle}>Consultar por Nome</Text>
 
-            {/* Caixa de texto para pesquisar na lista */}
+            {/* Caixa de texto para pesquisar produto por nome */}
             <TextInput
               style={styles.input}
               placeholder="Digite o nome do produto..."
@@ -139,30 +111,30 @@ export function BuyListForm({
               onChangeText={onSearchProductQueryChange}
               autoFocus
             />
+
             {/* Indicador visual de carregamento (Spinner) */}
             {isSearching && <ActivityIndicator size="small" color="#007AFF" style={{ marginVertical: 10 }} />}
 
-            {/* Lista com os resultados encontrados no banco */}
+            {/* Lista com os resultados encontrados */}
             <FlatList
               data={foundProducts}
               keyExtractor={(item) => String(item.id_product)}
+              keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (
-                // Defini o item como um botão
                 <TouchableOpacity
                   style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
                   onPress={() => onSelectProductToBuy(item)}
                 >
-                  {/* Apresentar os dados do registro */}
                   <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#222' }}>{item.nm_product}</Text>
                 </TouchableOpacity>
               )}
-              // Apresentar mensagem se não encontrar nenhum registro
               ListEmptyComponent={
                 productQuery.trim().length > 0 && !isSearching ? (
                   <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Nenhum produto encontrado.</Text>
                 ) : null
               }
             />
+
             {/* Botão para fechar o modal */}
             <View style={{ marginTop: 12 }}>
               <Button title="Fechar" color="#FF3B30" onPress={onCloseNameSearchModal} />
@@ -185,21 +157,21 @@ export function BuyListForm({
               {editingQuantityItem?.nm_product}
             </Text>
 
-            {/* Caixa de texto para editar o registro */}
+            {/* Caixa de texto para editar a quantidade */}
             <TextInput
               style={styles.input}
-              keyboardType="numeric"
+              keyboardType="number-pad"
               value={newQuantityText}
               onChangeText={onChangeQuantityText}
               placeholder="Nova quantidade"
               placeholderTextColor="#888"
+              selectTextOnFocus
               autoFocus
             />
+
             {/* Botões de ação */}
             <View style={styles.modalButtonsContainer}>
-              {/* Botão salva registro */}
               <Button title="Salvar" onPress={onSaveQuantity} />
-              {/* Botão cancela operação registro */}
               <Button title="Cancelar" color="#6c757d" onPress={onCloseQuantityModal} />
             </View>
           </View>

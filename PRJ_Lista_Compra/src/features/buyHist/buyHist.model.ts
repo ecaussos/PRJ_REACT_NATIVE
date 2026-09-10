@@ -1,22 +1,21 @@
+// src/features/buyHist/buyHist.model.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { BuyHistWithDetailsEntity } from '../../data/entities/buyHistEntity';
+import { BuyHistEntity, BuyHistWithDetailsEntity } from '../../data/entities/buyHistEntity';
 import { BuyHistRepository } from '../../data/repositories/buyHistRepository';
 
 const repository = new BuyHistRepository();
 
 export const BuyHistModel = {
+  // Realiza o diagnóstico e busca o histórico detalhado
   async fetchHistory(): Promise<BuyHistWithDetailsEntity[]> {
-    // 1. Diagnóstico: Verifica a contagem e os registros brutos na tabela hist_buy (sem JOIN)
     try {
       const db = await getDBConnection();
       
-      // Consulta a quantidade total de linhas
       const countResult = await db.getFirstAsync<{ total: number }>(
         'SELECT COUNT(*) as total FROM hist_buy;'
       );
       const totalRows = countResult?.total ?? 0;
 
-      // Consulta os registros brutos
       const rawRows = await db.getAllAsync('SELECT * FROM hist_buy;');
 
       console.log(`🔍 [Diagnóstico] Total de linhas na hist_buy: ${totalRows}`);
@@ -25,11 +24,15 @@ export const BuyHistModel = {
       console.error('❌ [Diagnóstico] Erro ao ler tabela hist_buy:', err);
     }
 
-    // 2. Busca com os detalhes (JOINs)
     const history = await repository.findAllWithDetails();
     console.log('📦 [Diagnóstico] Histórico retornado com JOINs:', history);
 
     return history;
+  },
+
+  // Insere um novo registro de compra no histórico
+  async create(data: Omit<BuyHistEntity, 'id_hist_buy'>): Promise<void> {
+    await repository.create(data);
   },
 
   // Método utilitário para checar se a tabela possui registros

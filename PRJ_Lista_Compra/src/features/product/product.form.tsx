@@ -1,70 +1,66 @@
-// src/features/product/ProductForm.tsx
+// src/features/product/product.form.tsx
 import { Picker } from '@react-native-picker/picker';
 import { Button, Text, TextInput, View } from 'react-native';
+import { ProductModel } from './product.model';
 import { styles } from './product.styles';
-import { GroupOption } from './product.types';
-
-// Define o formato das propriedades que o formulário recebe da tela
-interface ProductFormProps {
-  name: string;
-  setName: (text: string) => void;
-  barcode: string;
-  setBarcode: (text: string) => void;
-  groupId: string;
-  setGroupId: (text: string) => void;
-  editingId: number | null;
-  groups: GroupOption[];
-  onSave: () => void;
-  onCancel: () => void;
-}
+import { ProductFormProps } from './product.types';
 
 // Componente do formulário para cadastro e edição dos registros
 export default function ProductForm({
-  name,
-  setName,
-  barcode,
-  setBarcode,
-  groupId,
-  setGroupId,
-  editingId,
-  groups,
-  onSave,
-  onCancel,
+  name,                       // Nome do produto
+  setName,                    // Atualiza o nome
+  barcode,                    // Código de barras (GTIN)
+  setBarcode,                 // Atualiza o código de barras
+  groupId,                    // ID do grupo selecionado
+  setGroupId,                 // Atualiza o grupo selecionado
+  editingId,                  // ID do produto em edição ou null
+  groups,                     // Lista de grupos para o Picker
+  onSave,                     // Função para salvar/cadastrar
+  onCancel,                   // Função para cancelar a edição
 }: ProductFormProps) {
-// MONTAGEM DA TELA
+  
+  // Define o modo do formulário: Edição (true) ou Cadastro (false)
+  const isEditing = editingId !== null;
+
+  // Regra de Validação: Campos devem tem informações digitas - habilita botão
+  const isFormValid = ProductModel.isValid(name,barcode, groupId);
+  
+  // MONTAGEM DA TELA - renderização
   return (
     // Card que agrupa os elementos visuais do formulário
     <View style={styles.formCard}>
-      {/* Título dinâmico: muda dependendo da operação realizada */}
+      {/* Título dinâmico baseado na ação (Editar / Cadastrar) */}
       <Text style={styles.subtitle}>
-        {editingId !== null ? 'Editar' : 'Cadastrar'}
+        {isEditing ? 'Editar Produto' : 'Cadastrar Produto'}
       </Text>
       
-      {/* Campo de texto para o Nome do Produto */}
+      {/* Campo para preenchimento do Nome do Produto */}
       <TextInput
         style={styles.input}
-        placeholder="Nome do Produto"
+        placeholder="Nome do Produto *"
         value={name}
         onChangeText={setName}
       />
 
-      {/* Campo de texto para o Código de Barras (GTIN) */}
+      {/* Campo para preenchimento do Código de Barras (Opcional) */}
       <TextInput
         style={styles.input}
-        placeholder="Código de Barras (GTIN)"
+        placeholder="Código de Barras (GTIN) *"
         value={barcode}
         onChangeText={setBarcode}
         keyboardType="numeric"
       />
 
-      {/* Componente Picker (Listbox) para selecionar dinamicamente o grupo do produto */}
+      {/* Caixa de Seleção (Dropdown) para vínculo com Grupo de Produtos */}
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={groupId}
           onValueChange={(itemValue) => setGroupId(itemValue)}
         >
-          <Picker.Item label="Selecione o Grupo..." value="" />
-          {groups && groups.map((group: GroupOption) => (
+          {/* Opção Padrão / Placeholder */}
+          <Picker.Item label="Selecione o Grupo... *" value="" />
+          {/* Mapeamento dinâmico da lista de grupos cadastrados */}
+          {groups?.map((group) => (
             <Picker.Item 
               key={group.id_group} 
               label={group.nm_group} 
@@ -74,16 +70,17 @@ export default function ProductForm({
         </Picker>
       </View>
 
-      {/* Botão Salvar/Cadastar: Salva o novo cadastro ou atualiza*/}
+      {/* Botão Salvar/Cadastrar: Salva o novo cadastro ou atualiza */}
       <Button 
-        title={editingId !== null ? "Salvar" : "Cadastrar"} 
+        title={isEditing ? 'Salvar Alterações' : 'Cadastrar'} 
         onPress={onSave} 
-        color={editingId !== null ? "#0051FF" : undefined}
+        disabled={!isFormValid}
+        color={isEditing ? '#0051FF' : undefined}
       />
 
       {/* Botão cancelar: visível apenas quando estiver editando */}
-      {editingId !== null && (
-        <View style={{ marginTop: 8 }}>
+      {isEditing && (
+        <View style={styles.cancelButtonContainer}>
           <Button 
             title="Cancelar" 
             color="#6c757d" 

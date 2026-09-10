@@ -1,29 +1,28 @@
-// src/features/groupProduct/GroupProductForm.tsx
+// src/features/groupProduct/groupProduct.form.tsx
 import { Button, Text, TextInput, View } from 'react-native';
+import { GroupProductModel } from './groupProduct.model';
 import { styles } from './groupProduct.styles';
+import { GroupProductFormProps } from './groupProduct.types';
 
-// Define o formato das propriedades que o formulário recebe da tela
-interface GroupProductFormProps {
-  name: string;
-  setName: (text: string) => void;
-  editingId: number | null;
-  onSave: () => void;
-  onCancel: () => void;
-}
 // Componente do formulário para cadastro e edição dos registros
 export default function GroupProductForm({
   name,
   setName,
-  editingId,
+  isEditing,
   onSave,
   onCancel,
 }: GroupProductFormProps) {
+
+  // Regra de Validação: Campos devem tem informações - habilita botão
+  const isFormValid = GroupProductModel.isValid(name);
+  
+  // MONTAGEM DA TELA - renderização
   return (
     // Card que agrupa os elementos visuais do formulário
     <View style={styles.formCard}>
       {/* Título dinâmico: muda dependendo da operação realizada */}
       <Text style={styles.subtitle}>
-        {editingId !== null ? 'Editar' : 'Cadastrar'}
+        {isEditing ? 'Editar Grupo' : 'Cadastrar Grupo'}
       </Text>
 
       {/* Campo de texto para o Nome do Grupo */}
@@ -32,18 +31,20 @@ export default function GroupProductForm({
         placeholder="Nome do Grupo"
         value={name}
         onChangeText={setName}
+        autoCapitalize="words"
       />
 
-      {/* Botão Salvar/Cadastar: Salva o novo cadastro ou atualiza*/}
+      {/* Botão Salvar/Cadastrar: Salva o novo cadastro ou atualiza */}
       <Button 
-        title={editingId !== null ? "Salvar" : "Cadastrar"} 
+        title={isEditing ? "Salvar Alterações" : "Cadastrar"} 
         onPress={onSave} 
-        color={editingId !== null ? "#0051FF" : undefined}
+        disabled={!isFormValid}
+        color={isEditing ? "#0051FF" : undefined}
       />
 
       {/* Botão cancelar: visível apenas quando estiver editando */}
-      {editingId !== null && (
-        <View style={{ marginTop: 8 }}>
+      {isEditing && (
+        <View style={styles.cancelButtonContainer}>
           <Button 
             title="Cancelar" 
             color="#6c757d" 

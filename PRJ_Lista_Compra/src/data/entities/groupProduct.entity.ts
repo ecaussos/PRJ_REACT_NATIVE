@@ -9,5 +9,5 @@ export interface GroupProductEntity {
 // 2. DTO para criação de novos registros (omite o ID autoincrement)
 export type CreateGroupProductDTO = Omit<GroupProductEntity, 'id_group'>;
 
-// 3. DTO para atualização de registros existente
-export type UpdateBuyListDTO = Partial<Omit<GroupProductEntity, 'id_group'>>;
+// 3. DTO para atualização de registros existentes
+export type UpdateGroupProductDTO = CreateGroupProductDTO;

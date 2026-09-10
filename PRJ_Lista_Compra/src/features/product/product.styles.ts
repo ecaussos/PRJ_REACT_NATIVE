@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     flex: 1, 
     padding: 16, 
     backgroundColor: '#f8f9fa', 
-    paddingTop: 50 
+    paddingTop: 50,
   },
   // Estilo do título principal da tela
   title: { 
@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold', 
     marginBottom: 12, 
     textAlign: 'center', 
-    color: '#333' 
+    color: '#333',
   },
   // Estilo dos subtítulos de seções
   subtitle: {
@@ -25,16 +25,16 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#444',
   },
-  // Espaçamento vertical para o indicador de carregamento (ActivityIndicator)
+  // Espaçamento vertical para o indicador de carregamento
   loader: { 
-    marginVertical: 10 
+    marginVertical: 10,
   },
   // Estilo para destacar mensagens de erro na interface
   error: { 
     color: '#FF3B30', 
     marginBottom: 8, 
     textAlign: 'center', 
-    fontWeight: '600' 
+    fontWeight: '600',
   },
   // Card branco que agrupa os elementos do formulário de cadastro e edição
   formCard: {
@@ -75,14 +75,19 @@ export const styles = StyleSheet.create({
   itemInfo: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    alignItems: 'center' 
+    alignItems: 'center',
+  },
+  // Container de texto com ajuste flex
+  textContainer: {
+    flex: 1,
+    marginRight: 8,
   },
   // Container que organiza os botões de ícone (editar e excluir) lado a lado
   actionButtonsContainer: { 
     flexDirection: 'row', 
-    gap: 8 
+    gap: 8,
   },
-  // Estilo base para os botões modernos em formato de ícone quadrado com sombra
+  // Botões modernos em formato de ícone quadrado com sombra
   iconButton: {
     width: 38,
     height: 38,
@@ -97,29 +102,33 @@ export const styles = StyleSheet.create({
   },
   // Cor de fundo específica para o botão de editar (azul)
   editButton: { 
-    backgroundColor: '#0051FF' 
+    backgroundColor: '#0051FF',
   },
   // Cor de fundo específica para o botão de excluir (vermelho)
   deleteButton: { 
-    backgroundColor: '#FF0000' 
+    backgroundColor: '#FF0000',
   },
-  // Estilo do nome do produto exibido no card da lista
-  ItemList: { 
+  // botão de cancelar
+  cancelButtonContainer: {
+    marginTop: 8,
+  },
+  // Nome principal do item na lista
+  itemList: { 
     fontSize: 16, 
     fontWeight: 'bold', 
-    color: '#222' 
+    color: '#222',
   },
-  // Estilo para os detalhes secundários do produto (como GTIN e grupo)
-  details: { 
-    fontSize: 12, 
-    color: '#666', 
-    marginTop: 2 
-  },
-  // Estilo do texto exibido na lista quando não há produtos cadastrados
+  // Estilo do texto exibido na lista quando não há cadastrados// Texto exibido na lista quando não há cadastrados
   emptyText: { 
     textAlign: 'center', 
     color: '#888', 
-    marginTop: 20 
+    marginTop: 20,
+  },
+  // Estilo do texto exibido na lista quando não há produtos cadastrados
+  details: { 
+    fontSize: 12, 
+    color: '#666', 
+    marginTop: 2,
   },
   // Container estilizado para envolver o componente Picker (seletor de grupos)
   pickerContainer: { 
@@ -127,6 +136,6 @@ export const styles = StyleSheet.create({
     borderColor: '#ddd', 
     borderRadius: 8, 
     marginBottom: 12, 
-    backgroundColor: '#fafafa' 
-  }
+    backgroundColor: '#fafafa',
+  },
 });

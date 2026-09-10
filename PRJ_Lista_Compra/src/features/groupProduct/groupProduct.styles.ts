@@ -48,6 +48,10 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
+  // Espaçamento superior do container do botão cancelar
+  cancelButtonContainer: {
+    marginTop: 8,
+  },
   // Estilo padrão para as caixas de texto (Inputs)
   input: {
     backgroundColor: '#fff',
@@ -75,12 +79,17 @@ export const styles = StyleSheet.create({
   itemInfo: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    alignItems: 'center' 
+    alignItems: 'center',
+  },
+  // Container do texto do item da lista
+  textContainer: {
+    flex: 1,
+    marginRight: 8,
   },
   // Container que organiza os botões de ícone (editar e excluir) lado a lado
   actionButtonsContainer: { 
     flexDirection: 'row', 
-    gap: 8 
+    gap: 8,
   },
   // Estilo base para os botões modernos em formato de ícone quadrado com sombra
   iconButton: {
@@ -97,22 +106,22 @@ export const styles = StyleSheet.create({
   },
   // Cor de fundo específica para o botão de editar (azul)
   editButton: { 
-    backgroundColor: '#0051FF' 
+    backgroundColor: '#0051FF',
   },
   // Cor de fundo específica para o botão de excluir (vermelho)
   deleteButton: { 
-    backgroundColor: '#FF0000' 
+    backgroundColor: '#FF0000',
   },
   // Estilo do nome exibido no card da lista
-  ItemList: { 
+  itemList: { 
     fontSize: 16, 
     fontWeight: 'bold', 
-    color: '#222' 
+    color: '#222',
   },
   // Estilo do texto exibido na lista quando não há cadastrados
   emptyText: { 
     textAlign: 'center', 
     color: '#888', 
-    marginTop: 20 
+    marginTop: 20,
   },
 });

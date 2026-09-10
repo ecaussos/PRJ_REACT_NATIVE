@@ -1,57 +1,27 @@
 // src/features/groupProduct/groupProduct.screen.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupProductForm from './groupProduct.form';
 import { useGroupProductViewModel } from './groupProduct.hook';
 import { styles } from './groupProduct.styles';
 
 export default function GroupProductScreen() {
-  // Obtém o estado atual (lista de grupos, carregamento, erros) e a função dispatch do hook ViewModel
-  const { state, dispatch } = useGroupProductViewModel();
-  // Estados locais para controlar os inputs do formulário, o texto de pesquisa e o ID em modo de edição
-  const [name, setName] = useState('');
-  const [searchText, setSearchText] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  // Reseta os campos do formulário e limpa o ID de edição, 
-  const resetForm = () => {
-    setEditingId(null);
-    setName('');
-  };
+  // Obtém o estado atual, estado do formulário e as funções do hook ViewModel
+  const { state, form, saveGroupProduct, dispatch } = useGroupProductViewModel();
+
   // Valida e submete o formulário, disparando uma intenção (CREATE ou UPDATE) para o ViewModel
-  const handleSave = () => {
-    // Validação para garantir que o nome do grupo não está vazio
-    if (!name.trim()) {
-      Alert.alert('Atenção', 'Preencha o nome do grupo!');
-      return;
+  const handleSave = async () => {
+    try {
+      const message = await saveGroupProduct();
+      // Gerar alerta informativo  
+      Alert.alert('Sucesso', message);
+    } catch (error: any) {
+      // Captura o erro disparado pela verificação e exibe no popup de aviso
+      Alert.alert('Aviso', error.message || 'Erro ao salvar Grupo.');
     }
-    // Se houver um ID em edição, despacha a ação de atualização
-    if (editingId !== null) {
-      dispatch({
-        type: 'UPDATE',
-        payload: {
-          id_group: editingId,
-          nm_group: name.trim(),
-        },
-      });
-      Alert.alert('Sucesso', 'Grupo atualizado com sucesso!');
-    // Caso contrário, despacha a ação de criação de um novo registro
-    } else {
-      dispatch({
-        type: 'CREATE',
-        payload: {
-          nm_group: name.trim(),
-        },
-      });
-      Alert.alert('Sucesso', 'Grupo cadastrado com sucesso!');
-    }
-    resetForm();
   };
-  // Filtra a lista de grupos em tempo real com base no texto digitado na pesquisa
-  const filteredGroups = state.groups.filter(item => 
-    item.nm_group.toLowerCase().includes(searchText.toLowerCase())
-  );
-  // MONTAGEM DA TELA 
+
+  // MONTAGEM DA TELA
   return (
     <View style={styles.container}>
       {/* Título principal da tela */}
@@ -60,13 +30,14 @@ export default function GroupProductScreen() {
       {state.loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
       {/* Exibição de mensagens de erro, caso ocorram */}
       {state.error && <Text style={styles.error}>{state.error}</Text>}
+
       {/* Componente do Form para cadastro e edição */}
       <GroupProductForm
-        name={name}
-        setName={setName}
-        editingId={editingId}
+        name={form.name}
+        setName={form.setName}
+        isEditing={form.isEditing}
         onSave={handleSave}
-        onCancel={resetForm}
+        onCancel={form.resetForm}
       />
       {/* Subtítulo da seção de listagem */}
       <Text style={styles.subtitle}>Grupos Cadastrados</Text>
@@ -74,12 +45,12 @@ export default function GroupProductScreen() {
       <TextInput
         style={styles.input}
         placeholder="Pesquisar Grupo"
-        value={searchText}
-        onChangeText={setSearchText}
+        value={form.searchText}
+        onChangeText={form.setSearchText}
       />
       {/* Lista (FlatList) para renderizar os registros cadastrados e filtrados */}
       <FlatList
-        data={filteredGroups}
+        data={state.groups}
         keyExtractor={(item) => String(item.id_group)}
         renderItem={({ item }) => {
           // Trava de segurança: IDs de 1 a 7 são padrões do sistema e não podem ser editados/excluídos
@@ -87,16 +58,16 @@ export default function GroupProductScreen() {
           return (
             <View style={styles.itemCard}>
               <View style={styles.itemInfo}>
-                {/* Apresenta a lista com campos*/}
-                <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.ItemList}>{item.nm_group}</Text>
+                {/* Apresenta a lista com campos */}
+                <View style={styles.textContainer}>
+                  <Text style={styles.itemList}>{item.nm_group}</Text>
                 </View>
-                {/* Container dos botões de ação*/}
+                {/* Container dos botões de ação */}
                 <View style={styles.actionButtonsContainer}>
-                  {/* Verifica se registro é padrão "trava de segurança"*/}
+                  {/* Verifica se registro é padrão "trava de segurança" */}
                   {isSystemDefault ? (
                     // Se for padrão exibe um ícone de cadeado para os registros "Bloqueado"
-                    <View style={[styles.iconButton]}>
+                    <View style={styles.iconButton}>
                       <Text style={{ fontSize: 16 }}>🔒</Text>
                     </View>
                   ) : (
@@ -105,15 +76,12 @@ export default function GroupProductScreen() {
                       {/* Botão de Edição: preenche o formulário com os dados do item selecionado */}
                       <TouchableOpacity 
                         style={[styles.iconButton, styles.editButton]} 
-                        onPress={() => {
-                          setEditingId(Number(item.id_group));
-                          setName(item.nm_group);
-                        }}
+                        onPress={() => form.startEditing(item.id_group, item.nm_group)}
                       >
-                        {/* Ícone botão de Edição*/}
+                        {/* Ícone botão de Edição */}
                         <MaterialCommunityIcons name="pencil-outline" size={20} color="#FFFFFF" />
                       </TouchableOpacity>
-                      {/* Botão de Exclusão: exibe alerta de confirmação antes de remover o registros */}
+                      {/* Botão de Exclusão: exibe alerta de confirmação antes de remover o registro */}
                       <TouchableOpacity 
                         style={[styles.iconButton, styles.deleteButton]} 
                         onPress={() => {
@@ -125,13 +93,20 @@ export default function GroupProductScreen() {
                               { 
                                 text: 'Excluir', 
                                 style: 'destructive',
-                                onPress: () => dispatch({ type: 'DELETE', payload: Number(item.id_group) }) 
+                                onPress: async () => {
+                                  try {
+                                    await dispatch({ type: 'DELETE', payload: item.id_group });
+                                    Alert.alert('Sucesso', 'Grupo excluído com sucesso!');
+                                  } catch (error: any) {
+                                    Alert.alert('Erro', error.message || 'Erro ao excluir o grupo.');
+                                  }
+                                } 
                               }
                             ]
                           );
                         }}
                       >
-                        {/* Ícone botão de Exclusão*/}
+                        {/* Ícone botão de Exclusão */}
                         <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FFFFFF" />
                       </TouchableOpacity>
                     </>

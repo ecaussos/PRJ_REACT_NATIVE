@@ -1,50 +1,50 @@
 // src/features/supplier/SupplierForm.tsx
 import { Button, Text, TextInput, View } from 'react-native';
+import { SupplierModel } from './supplier.model';
 import { styles } from './supplier.styles';
+import { SupplierFormProps } from './supplier.types';
 
-// Define o formato das propriedades que o formulário recebe da tela
-interface SupplierFormProps {
-  name: string;
-  setName: (text: string) => void;
-  editingId: number | null;
-  onSave: () => void;
-  onCancel: () => void;
-}
 // Componente do formulário para cadastro e edição dos registros
 export default function SupplierForm({
-  name,
-  setName,
-  editingId,
-  onSave,
-  onCancel,
+  name,                       // Nome do fornecedor
+  setName,                    // Atualiza o nome
+  isEditing,                  // Indica se está em modo de edição
+  onSave,                     // Função para salvar/cadastrar
+  onCancel,                   // Função para cancelar a edição
 }: SupplierFormProps) {
+
+  // Regra de Validação: Campos devem tem informações - habilita botão
+  const isFormValid = SupplierModel.isValid(name);
+
+  // MONTAGEM DA TELA - renderização
   return (
     // Card que agrupa os elementos visuais do formulário
     <View style={styles.formCard}>
-
-      {/* Título dinâmico: muda dependendo da operação realizada */}
+      {/* Título dinâmico baseado na ação (Editar / Cadastrar) */}
       <Text style={styles.subtitle}>
-        {editingId !== null ? 'Editar' : 'Cadastrar'}
+        {isEditing ? 'Editar Fornecedor' : 'Cadastrar Fornecedor'}
       </Text>
 
-      {/* Campo de texto para o Nome do Fonercedor */}
+      {/* Campo para preenchimento do Nome do Fornecedor */}
       <TextInput
         style={styles.input}
-        placeholder="Nome do Mercado"
+        placeholder="Nome do Mercado / Fornecedor *"
         value={name}
         onChangeText={setName}
+        autoCapitalize="words"
       />
 
-      {/* Botão Salvar/Cadastar: Salva o novo cadastro ou atualiza*/}
+      {/* Botão Salvar/Cadastrar: Salva o novo cadastro ou atualiza */}
       <Button 
-        title={editingId !== null ? "Salvar" : "Cadastrar"} 
+        title={isEditing ? "Salvar Alterações" : "Cadastrar"} 
         onPress={onSave} 
-        color={editingId !== null ? "#0051FF" : undefined}
+        disabled={!isFormValid}
+        color={isEditing ? "#0051FF" : undefined}
       />
 
       {/* Botão cancelar: visível apenas quando estiver editando */}
-      {editingId !== null && (
-        <View style={{ marginTop: 8 }}>
+      {isEditing && (
+        <View style={styles.cancelButtonContainer}>
           <Button 
             title="Cancelar" 
             color="#6c757d" 

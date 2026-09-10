@@ -25,7 +25,6 @@ export function useBuyHistViewModel() {
   }, []);
 
   // Executa o carregamento inicial dos dados assim que o hook é montado na tela
-  // Executa o carregamento inicial dos dados assim que o hook é montado na tela
   useEffect(() => {
     dispatch({ type: 'LOAD_HISTORY' });
   }, [dispatch]);
