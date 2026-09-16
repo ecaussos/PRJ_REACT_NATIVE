@@ -1,9 +1,10 @@
 // src/data/repositories/buyList.repository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
+import { ProductSearchResult } from '../../features/buyList/buyList.types';
 import {
   BuyListEntity,
   BuyListItemWithProductEntity,
-  CreateBuyListDTO
+  CreateBuyListDTO,
 } from '../entities/buyList.entity';
 import { IBuyListRepository } from '../interfaces/buyList.repository.interfaces';
 
@@ -11,8 +12,11 @@ export { IBuyListRepository };
 
 export class BuyListRepository implements IBuyListRepository {
 
-  // Buscar todos os itens da lista de compras (com informações do produto e grupo)
-  async findAllWithProducts(): Promise<BuyListItemWithProductEntity[]> {
+  findAll(): Promise<BuyListItemWithProductEntity[]> {
+    throw new Error('Method not implemented.');
+  }
+  // Buscar todos os itens da lista de compras (com dados do produto e grupo via LEFT JOIN)
+  async findAllWithProduct(): Promise<BuyListItemWithProductEntity[]> {
     try {
       const db = await getDBConnection();
       const query = `
@@ -27,13 +31,51 @@ export class BuyListRepository implements IBuyListRepository {
           g.nm_group
         FROM list_buy l
         INNER JOIN product p ON l.id_product = p.id_product
-        INNER JOIN group_product g ON p.id_group = g.id_group
-        ORDER BY g.id_group ASC, p.nm_product ASC;
+        LEFT JOIN group_product g ON p.id_group = g.id_group
+        ORDER BY g.nm_group ASC, p.nm_product ASC;
       `;
       const result = await db.getAllAsync<BuyListItemWithProductEntity>(query);
       return result;
     } catch (error: any) {
       throw new Error(`Erro ao buscar itens da lista de compras: ${error.message}`);
+    }
+  }
+
+// Buscar produto por Código de Barras exato
+  async findByBarcode(cd_product_gtin: string): Promise<ProductSearchResult | null> {
+    try {
+      const db = await getDBConnection();
+      const query = `
+        SELECT 
+          id_product, 
+          nm_product, 
+          cd_product_gtin
+        FROM product
+        WHERE cd_product_gtin = ?;
+      `;
+      return await db.getFirstAsync<ProductSearchResult>(query, [cd_product_gtin]);
+    } catch (error: any) {
+      throw new Error(`Erro ao buscar por código: ${error.message}`);
+    }
+  }
+
+  // Buscar produtos por Nome (parcial com LIKE)
+  async findByName(nm_product: string): Promise<ProductSearchResult[]> {
+    try {
+      const db = await getDBConnection();
+      const query = `
+        SELECT 
+          id_product, 
+          nm_product, 
+          cd_product_gtin
+        FROM product
+        WHERE nm_product LIKE ?
+        ORDER BY nm_product ASC;
+      `;
+      const searchName = `%${nm_product.trim()}%`;
+      return await db.getAllAsync<ProductSearchResult>(query, [searchName]);
+    } catch (error: any) {
+      throw new Error(`Erro ao buscar por nome: ${error.message}`);
     }
   }
 
@@ -60,7 +102,7 @@ export class BuyListRepository implements IBuyListRepository {
       await db.runAsync(query, [
         item.id_product,
         item.qt_product,
-        item.dt_list_buy
+        item.dt_list_buy,
       ]);
     } catch (error: any) {
       throw new Error(`Erro ao inserir item na lista de compras: ${error.message}`);
@@ -68,11 +110,11 @@ export class BuyListRepository implements IBuyListRepository {
   }
 
   // Atualizar a quantidade de um item existente
-  async updateQuantity(id_list_buy: number, qt_product: number): Promise<void> {
+  async update(id_list_buy: number, qt_product: number): Promise<void> {
     try {
       const db = await getDBConnection();
       const query = `UPDATE list_buy SET qt_product = ? WHERE id_list_buy = ?;`;
-      await db.runAsync(query, [qt_product, id_list_buy]);
+      await db.runAsync(query, [qt_product,id_list_buy]);
     } catch (error: any) {
       throw new Error(`Erro ao atualizar quantidade na lista: ${error.message}`);
     }

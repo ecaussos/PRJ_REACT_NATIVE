@@ -1,137 +1,156 @@
 // src/features/supplier/supplier.hook.ts
 import { useCallback, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { SupplierModel, SupplierModelInstance } from './supplier.model';
 import { SupplierIntent, SupplierState } from './supplier.types';
 
+
 export function useSupplierViewModel(model: SupplierModel = SupplierModelInstance) {
-  // Estado centralizado gerenciando, carregamento e erros
+  // Estado centralizado de carregamento, erros e lista
   const [state, setState] = useState<SupplierState>({
-    suppliers: [],
-    loading: false,
-    error: null,
+    suppliers: [],                                                                 // Lista inicial de registros cadastrados (vazia)
+    loading: false,                                                                // Flag para controle de spinner/loading durante requisições
+    error: null,                                                                   // Mensagem de erro capturada nas operações (null)
   });
 
-  // Estados locais da UI encapsulados no ViewModel
-  const [name, setName] = useState('');
-  const [searchText, setSearchText] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
-
-  // Reseta o formulário
+  // Estados locais para controle de formulário, campo de busca e edição
+  const [name, setName] = useState('');                                            // Armazena o valor digitado no campo de nome
+  const [searchText, setSearchText] = useState('');                                // Armazena o termo de busca para filtragem na listagem
+  const [editingId, setEditingId] = useState<number | null>(null);                 // Armazena o ID do registro em edição (null indica novo cadastro)
+ 
+  // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
-    setName('');
-    setEditingId(null);
+    setName('');                                                                   // Limpa o texto do campo de nome
+    setEditingId(null);                                                            // Limpa o ID, voltando o formulário para modo de criação
   }, []);
 
-  // Processador de intenções da interface (Intents) - MVI
+  // Processador de intenções da interface (MVI)
   const dispatch = useCallback(async (intent: SupplierIntent) => {
+    // Ativa o estado de carregamento e reseta mensagens de erro anteriores
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      switch (intent.type) {
-        case 'LOAD': {
-          // Busca fornecedores
-          const suppliersData = await model.fetchAll();
-          // Atualiza os estados
-          setState(prev => ({ 
-            ...prev, 
-            suppliers: suppliersData, 
-            loading: false 
+        switch (intent.type) {                                                     // Obten os valores do Intent do type 
+        case 'LOAD': {                                                             // Se a intenção for igual a LOAD
+          const Data = await model.fetchAll();                                     // Chama a função de busca todos os registro e armazena
+          setState(prev => ({                                                      // Atualiza os estado
+            ...prev,                                                               // Mantem estados ateriores
+            suppliers: Data,                                                       // Altera o estado e vincula os dados da busca a varíavel
+            loading: false                                                         // Altera o estado para Indicador visual de carregamento
           }));
           break;
         }
 
-        case 'CREATE':
-          // Executa a criação do registro
-          await model.create(intent.payload.nm_supplier);
-          // Limpa formulário
-          resetForm();
-          // Após criar, recarrega os dados
-          await dispatch({ type: 'LOAD' });
+        case 'CREATE':{                                                            // Se a intenção for igual a CREATE 
+          await model.create(intent.payload.nm_supplier);                          // Envia a intenção de criar com o campo
+          resetForm();                                                             // Limpar formulário
+          const Data = await model.fetchAll();                                     // Chama a função de busca todos os registro
+          setState(prev => ({...prev, suppliers: Data, loading: false }));         // Mantem status anteriores e atualiza os especificos                                        // Mantem os estados ateriores
           break;
+        }
 
-        case 'UPDATE':
-          // Executa a atualização do registro
-          await model.update(intent.payload.id_supplier, {
-            nm_supplier: intent.payload.nm_supplier
+        case 'UPDATE': {                                                           // Se a intenção for igual a UPDATE
+          await model.update(intent.payload.id_supplier, {                         // Envia a intenção de atualização do ID
+            nm_supplier: intent.payload.nm_supplier                                // Envia os campos a serem atualizados
           });
-          // Limpa formulário
-          resetForm();
-          // Após atualizar, recarrega os dados
-          await dispatch({ type: 'LOAD' });
+          resetForm();                                                             // Limpar formulário                             
+          const Data = await model.fetchAll();                                     // Chama a função de busca todos os registro
+          setState(prev => ({...prev, suppliers: Data, loading: false }));         // Mantem status anteriores e atualiza os especificos                                       // Mantem os estados ateriores
           break;
+        }
 
-        case 'DELETE':
-          // Executa a exclusão do registro
-          await model.delete(intent.payload);
-          // Após deletar, recarrega os dados
-          await dispatch({ type: 'LOAD' });
+        case 'DELETE': {                                                           // Se a intenção for igual a DELETE
+          await model.delete(intent.payload);                                      // Envia a intenção para deletar
+          const Data = await model.fetchAll();                                     // Chama a função de busca todos os registro
+          setState(prev => ({...prev, suppliers: Data, loading: false }));         // Mantem status anteriores e atualiza os especificos                                      // Mantem os estados ateriores
           break;
+        }
       }
     } catch (err) {
       // Captura e formata erros lançados pela Model ou pelo Repositório
       const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro na operação.';
-      setState(prev => ({ 
-        ...prev, 
-        error: errorMessage, 
-        loading: false 
-      }));
+      // Mantem status anteriores e atualiza os especificos 
+      setState(prev => ({...prev, error: errorMessage, loading: false }));
       //Lança a exceção para o screen
       throw err;
     }
-  // Limpa formulário
-  }, [model, resetForm]);
+  }, [model, resetForm]);  // Limpar formulário   
 
-  // Ação de salvamento encapsulada no Hook (orquestra Model + Dispatch)
-  const saveSupplier = async (): Promise<string> => {
-    // 1. Validação delegada ao Model
-    if (!SupplierModel.isValid(name)) {
-      throw new Error('Preencha o nome do fornecedor!');
+  // Função para salvar validar e gerar mensagem correspondente as ações
+  const handleSaveData = async (): Promise<boolean> => {                           // Função assíncrona que retorna verdadeiro ou falso
+    if (!SupplierModel.isValid(name)) {                                            // Chama a função de validação de dados e valida retorno
+      Alert.alert('Aviso', 'Preencha o nome do fornecedor!');                      // Falso: Gerar mensagem informativa
+      return false;                                                                // Para o processo e retorna falso
     }
-
-    const isEditing = editingId !== null;
-    // 2. Construção do payload/action delegada ao Model
-    const action = SupplierModel.buildSaveAction(name, isEditing, editingId);
-
-    // 3. Despacha a intenção
-    await dispatch(action);
-
-    // 4. Retorna a mensagem correspondente
-    return isEditing ? 'Fornecedor atualizado com sucesso!' : 'Fornecedor cadastrado com sucesso!';
+    const isEditing = editingId !== null;                                          // Verificar se é edição (true) ou criação (false)
+    const action = SupplierModel.buildSaveAction(name, isEditing, editingId);      // Cria o objeto da ação para salvar
+    try {                                                                          
+      await dispatch(action);                                                      // Envia a ação para ser processada
+      const successMessage = isEditing                                             // Escolhe a mensagem de acordo com a ação
+        ? 'Registro atualizado com sucesso!'                                       // Mensagem caso seja edição
+        : 'Registro cadastrado com sucesso!';                                      // Mensagem caso seja criação
+      Alert.alert('Sucesso', successMessage);                                      // Mostra mensagem de sucesso na tela
+      return true;                                                                 // Retorna verdadeiro indicando sucesso
+    } catch (err: any) {
+      Alert.alert('Aviso', err.message || 'Erro ao salvar o registro.');           // Mostra o erro capturado na tela
+      return false;                                                                // Retorna falso indicando falha
+    }
   };
 
-  // Executa o carregamento inicial dos dados assim que o hook é montado na tela
-  useEffect(() => {
-    dispatch({ type: 'LOAD' }).catch(() => {});
-  }, [dispatch]);
+  // Função para apresentar o modal de confirmação de operação - Delete
+  const handleDeleteData = (id: number, name: string) => {                         // Função e parametros recebidos
+    Alert.alert(                                                                   // Tipo de mensagem                                                      
+      'Excluir',                                                                   // Título da caixa de diálogo
+      `Deseja realmente excluir o registro "${name}"?`,                            // Mensagem informativa
+      [                                                                            // Botões de ação
+        { text: 'Cancelar', style: 'cancel' },                                     // Botão cancelar
+        { text: 'Excluir',                                                         // Botão confirmar
+          style: 'destructive',                                                    // Aplica estilo visual no iOS
+          onPress: async () => {                                                   // Ação a precionar o botão de confirmação
+            try {
+              await dispatch({ type: 'DELETE', payload: id });                     // Envia a intenção MVI de exclusão passando o ID
+              Alert.alert('Sucesso', `Registro ${name} excluído com sucesso!`);    // Mensagem informativa
+            } catch (err: any) {
+              Alert.alert('Erro', err.message || 'Erro ao excluir o fornecedor.'); // Exibe mensagem de erro customizada ou genérica em caso de falha
+            }
+          },
+        },
+      ]
+    );
+  };
 
-  // Filtra a lista em tempo real com base no texto pesquisado
-  const filteredSuppliers = state.suppliers.filter(supplier =>
-    supplier.nm_supplier.toLowerCase().includes(searchText.toLowerCase())
+  // Carregamento inicial ao montar o hook
+  useEffect(() => {                                                                // Executa quando a tela é aberta
+    dispatch({ type: 'LOAD' }).catch(() => {});                                    // Carrega a lista inicial e ignora erros não tratados
+  }, [dispatch]);                                                                  // Dependência para garantir execução correta
+
+  //Função parar filtrar lista de registros cadastrados
+  const filteredList = state.suppliers.filter(data =>                              // Percorre e filtra a lista de fornecedores
+    data.nm_supplier.toLowerCase().includes(searchText.toLowerCase())              // Compara o nome e o texto da busca (minúsculas)
   );
- 
-  // Preenche os campos do formulário para o modo de edição
-  const startEditing = (
-    id: number,
-    currentName: string
-  ) => {
-    setEditingId(id);
-    setName(currentName);
+
+  // Função de edição para preencher campos do formulario
+  const startEditing = (id: number, name: string) => {                             // Inicia o modo de edição com o ID e nome selecionados
+    setEditingId(id);                                                              // Salva o ID do item a ser editado
+    setName(name);                                                                 // Preenche o campo de texto com o nome atual
   };
 
-  // Retorna o estado atual e a função de despacho para consumo direto na tela (View)
   return { 
-    state: {
-      ...state,
-      suppliers: filteredSuppliers,
+    state: {                                                                       // Objeto com os dados de estado da tela
+      ...state,                                                                    // Copia os valores atuais (loading e error)
+      suppliers: filteredList,                                                     // Substitui a lista pela versão filtrada pela busca
     },
-    form: {
-      name, setName,
-      searchText, setSearchText,
-      isEditing: editingId !== null,
-      editingId,
-      resetForm,
-      startEditing,
+    form: {                                                                        // Objeto com os controles e valores do formulário
+      name,                                                                        // Texto atual do campo de nome
+      setName,                                                                     // Função para atualizar o texto do campo de nome
+      searchText,                                                                  // Texto atual do campo de busca
+      setSearchText,                                                               // Função para atualizar o texto do campo de busca
+      isEditing: editingId !== null,                                               // Indica se está em modo de edição (true) ou criação (false)
+      editingId,                                                                   // ID do registro que está sendo editado (ou null)
+      resetForm,                                                                   // Função para limpar os campos do formulário
+      startEditing,                                                                // Função para preparar os campos para edição
     },
-    saveSupplier,
-    dispatch 
+    handleSaveData,                                                                // Função para salvar ou atualizar o registro
+    handleDeleteData,                                                              // Função para confirmar e excluir o registro
+    dispatch,                                                                      // Processador de intenções MVI
   };
 }

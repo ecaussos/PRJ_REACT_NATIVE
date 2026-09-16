@@ -1,71 +1,75 @@
 // src/features/buyList/buyList.types.ts
 import { BuyListEntity, BuyListItemWithProductEntity } from '../../data/entities/buyList.entity';
-import { EditingQuantityItem, ProductSearchResult } from './buyList.model';
 
 // Re-exportação para facilidade de uso na camada de UI
 export type BuyList = BuyListEntity;
 
-// Contrato das Props consumidas pelo componente de formulário (BuyListForm.tsx)
-export interface BuyListFormProps {
-  // Props do Modal da Câmera
-  showCameraModal: boolean;                                           // Visibilidade do modal de scanner/câmera
-  onScanSuccess: (barcode: string) => void;                             // Acionado após a leitura do código de barras
-  onCloseCameraModal: () => void;                                       // Fechar o modal da câmera
-  
-  // Props do Modal de Busca por Nome
-  showNameSearchModal: boolean;                                       // Visibilidade do modal de busca por nome
-  productQuery: string;                                                 // Texto atual da busca por nome de produto
-  foundProducts: ProductSearchResult[];                                 // Lista de produtos retornados da pesquisa
-  isSearching: boolean;                                                 // Indicador visual do estado de carregamento da busca
-  onSearchProductQueryChange: (query: string) => void | Promise<void>;  // Handler para alteração da query de pesquisa
-  onSelectProductToBuy: (product: ProductSearchResult) => void;         // Selecionar o produto desejado na lista
-  onCloseNameSearchModal: () => void;                                   // Fechar o modal de busca por nome
-
-  // Props do Modal de Edição de Quantidade
-  editingQuantityItem: EditingQuantityItem | null;                      // Objeto com o item que está recebendo a alteração de quantidade
-  newQuantityText: string;                                              // Texto digitado no input de alteração da quantidade
-  onChangeQuantityText: (text: string) => void;                         // Handler para atualização do input de quantidade
-  onSaveQuantity: () => void;                                           // Salva a editção do formulário de quantidade
-  onCloseQuantityModal: () => void;                                     // Fechar o modal de edição de quantidade
+// DTO para retorno de buscas
+export interface ProductSearchResult {
+  id_product: number;             // Id único do produto retornado
+  nm_product: string;             // Nome do produto retornado
+  cd_product_gtin: string | null; // Código do produto retornado
+  nm_group?: string | null;       // Nome do grupo do produto retornado
 }
 
-// Interface que encapsula o gerenciamento de dados do formulário e filtro no Hook (ViewModel)
-export interface BuyListFormState {
-  // Câmera
-  showCameraModal: boolean;                                           // Visibilidade do modal de scanner/câmera
-  setShowCameraModal: (show: boolean) => void;                        // Altera visibilidade do modal de scanner
- 
-  // Busca por Nome
-  showNameSearchModal: boolean;                                       // Visibilidade do modal de busca por nome
-  setShowNameSearchModal: (show: boolean) => void;                    // Altera a visibilidade da busca por nome
-  searchText: string;                                                 // Filtro de busca textual na lista
-  setSearchText: (text: string) => void;                              // Altera o filtro de busca da lista
-  productQuery: string;                                               // Termo pesquisado no modal por nome
-  setProductQuery: (query: string) => void;                           // Altera o termo de busca por nome
-  foundProducts: ProductSearchResult[];                               // Lista de produtos encontrados no banco
-  setFoundProducts: (products: ProductSearchResult[]) => void;        // Altera a lista de encontrados
-  isSearching: boolean;                                               // Status de carregamento da consulta de nomes
-  setIsSearching: (isSearching: boolean) => void;                     // Altera status do indicador de carregamento
+// -------- Interfaces de Componentes de UI (Props) - Utilizados pelo Form  -------- //
 
-  // Edição de Quantidade
-  editingQuantityItem: EditingQuantityItem | null;                    // Item em edição de quantidade
-  setEditingQuantityItem: (item: EditingQuantityItem | null) => void; // Define o item em edição
-  newQuantityText: string;                                            // Valor do input do modal de quantidade
-  setNewQuantityText: (text: string) => void;                         // Altera o texto do input de quantidade
+// Props para as ações principais (Cadastrar, Filtrar e Limpar)
+export interface BuylistActionsProps {
+  onOpenCreateModal: () => void; // Função executada para abrir o modal de novo cadastro
+  onOpenFilterModal: () => void; // Função executada para abrir o modal de filtragem na lista
+  onClearSearch: () => void;     // Função executada para limpar o filtro de busca aplicado
+  onClearList: () => void;       // Aciona a confirmação para exluir todos os registros da lista (limpar ista inteira)
+  hasActiveSearch: boolean;      // Indica se existe uma busca ativa no momento para alternar ícones ou botões
 }
 
-// Define o formato completo do estado gerenciado pelo ViewModel (Hook) da tela Lista de Compra
+// Props do Modal de filtragem seleção de item na lista (FlatList)
+export interface BuyListFilterProps {
+  visible: boolean;                           // Controla se o modal de filtram está visível ou oculto
+  searchText: string;                         // Valor do campo de texto digitado para a filtragem
+  onChangeSearchText: (text: string) => void; // Função executada ao digitar o texto da filtragem
+  onClose: () => void;                        // Função executada o fechamento do model
+  onCancel: () => void;                       // Função executada ao cancelar - limpar/fecha modal
+}
+
+// Props para a exibição de cada item da Lista de registros cadastrados
+export interface BuyListItemProps {
+  item: BuyListItemWithProductEntity;                    // Dados detalhados do item (com JOIN do produto)
+  onEdit: (item: BuyListItemWithProductEntity) => void;  // Ação para abrir modal de edição de quantidade
+  onDelete: (id_list_buy: number, name: string) => void; // Ação para excluir o item específico
+}
+
+// Props do Modal para buscar Produto castrados por o código de barra (Adcionar a lista) - Câmera
+export interface BuyListBarcodeProps {
+  visible: boolean;                         // Controla se a câmera está ativa
+  onScanSuccess: (barcode: string) => void; // Retorna o código lido
+  onClose: () => void;                      // Fecha a tela da câmera
+}
+
+// Props do Modal para buscar Produto cadastrados por nome (Adcionar a lista)
+export interface BuyListSearchProps {
+  visible: boolean;                                        // Controla se o modal de filtram está visível ou oculto
+  onChangeSearchText: (text: string) => void;              // Função executada ao digitar o texto no de busca
+  searchResults: ProductSearchResult[];                    // Lista os produtos encontrados na busca
+  onSelectProduct: (product: ProductSearchResult) => void; // Função ap selecionar o produto na busca para adicionar à lista
+  onClose: () => void;                                     // Função executada o fechamento do model
+  onCancel: () => void;                                    // Função executada ao cancelar - limpar/fechar modal
+}
+
+// -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
+
+// Estado centralizado retornado pelo Hook
 export interface BuyListState {
-  items: BuyListItemWithProductEntity[];    // Lista de produtos vinculados
-  loading: boolean;                         // Indicador de carregamento em tela
-  error: string | null;                     // Mensagem de erro global do módulo
+  items: BuyListItemWithProductEntity[]; // Lista de itens cadastrados com dados de produtos
+  searchResults: ProductSearchResult[];  // <-- busca produto por nome
+  loading: boolean;                      // Spinner/Carregamento ativado
+  error: string | null;                  // Erros ocorridos durante o fluxo
 }
 
-// Define as intenções (Intents/Actions) que a interface pode despachar para o ViewModel
+// Intenções (MVI) aceitas pelo dispatch do ViewModel
 export type BuyListIntent =
-  | { type: 'LOAD' }                                                                     // Intenção para carregar
-  | { type: 'CREATE'; payload: { id_product: number; qt_product: number } }              // Intenção para cadastrar
-  | { type: 'CREATE_BY_BARCODE'; payload: { barcode: string } }                          // Intenção para cadastrar por código de barras
-  | { type: 'UPDATE_QUANTITY'; payload: { id_list_buy: number; qt_product: number } }    // Intenção para atualizar quantidade
-  | { type: 'DELETE'; payload: { id_list_buy: number } }                                 // Intenção para excluir
-  | { type: 'CLEAR' };                                                                   // Intenção para limpar toda a lista
+  | { type: 'LOAD' }                                                         // Intenção para carregar
+  | { type: 'CREATE'; payload: { id_product: number; qt_product: number } }  // Intenção para cadastrar
+  | { type: 'UPDATE'; payload: { id_list_buy: number; qt_product: number } } // Intenção para atualizar 
+  | { type: 'DELETE'; payload: number }                                      // Intenção para excluir
+  | { type: 'CLEAR_LIST' }                                                   // Intenção para excluir todos

@@ -2,112 +2,137 @@
 import { GroupProductEntity } from '../../data/entities/groupProduct.entity';
 import { IGroupProductRepository } from '../../data/interfaces/groupProduct.repository.interface';
 import { GroupProductRepository } from '../../data/repositories/groupProduct.repository';
-import { GroupProductIntent } from './groupProduct.types';
+import { GroupProductIntent, GroupProductSearchResult } from './groupProduct.types';
+
+// Contrato/Interface da Model de Grupo
+export interface IGroupProductModel {
+  fetchAll(): Promise<GroupProductEntity[]>;                            // Assinatura para listar todos
+  findByNameExact(name: string): Promise<GroupProductEntity | null>;    // Assinatura para busca exata por nome
+  findByName(query: string): Promise<GroupProductSearchResult[]>;       // Assinatura para busca parcial por nome
+  create(nm_group: string): Promise<GroupProductEntity>;                // Assinatura para criação
+  update(id_group: number, data: { nm_group: string }): Promise<void>;  // Assinatura para atualização
+  delete(id_group: number): Promise<void>;                              // Assinatura para remoção
+}
 
 export class GroupProductModel {
-  // Instância do repositório injetada no construtor permitindo inversão de dependência e testes unitários
-  constructor(
-    private repository: IGroupProductRepository = new GroupProductRepository()
-  ) {}
+  // Recebe o repositório por contrato (interface), facilitando testes e inversão de controle
+  constructor(private repository: IGroupProductRepository) {} // Define a dependência por interface no construtor
 
-  // Retorna todos os registros cadastrados no banco
+  // Função para buscar todos os regittros sem filtro
   async fetchAll(): Promise<GroupProductEntity[]> {
-    return await this.repository.findAll();
+    return await this.repository.findAll(); // Executa a busca no repositório
   }
 
-  // Verifica se já existe um registro associado o nome
+  // Função para bucar os registro filtrando exatamente o que foi digitado
   async findByNameExact(name: string): Promise<GroupProductEntity | null> {
-    if (!name.trim()) return null;
-    return await this.repository.findByNameExact(name.trim());
+    const cleanName = name.trim();                           // Remove os espaços extras do início e fim da string
+    if (!cleanName) return null;                             // Retorna nulo se a busca for vazia após a limpeza
+    return await this.repository.findByNameExact(cleanName); // Executa a busca no repositório
   }
 
-  // Busca parcial por nome para auto-complete
-  async findByName(query: string) {
-    return await this.repository.findByName(query);
+  // Função parar buscar os registro ao digitar na caixa de texto (parcial-Like)
+  async findByName(query: string): Promise<GroupProductSearchResult[]> {
+    return await this.repository.findByName(query);  // Executa a busca no repositório
   }
 
-  // Valida e cadastra um novo fornecedo no sistema
-  async create(nm_group: string): Promise<GroupProductEntity> {
+  // Função para criar registro e valida antes de salvar no repsitório
+  async create(nm_group: string): Promise<GroupProductEntity> {  
+    // Remove os espaços extras do início e fim da string
     const cleanName = nm_group.trim();
-    // Valida se o campo está preenchido
+    // Valida se apos a limpeza se não existe dado preenchido
     if (!cleanName) {
-      throw new Error('O nome do grupo não pode estar vazio.');
+      // Verdadeiro: Gerar mensagem informativa
+      throw new Error('O nome do fornecedor não pode estar vazio.');
     }
-    // Regra de negócio: impede duplicidade de nome
-    const existing = await this.findByNameExact(cleanName);
+    // Chama a função para verificar se já existe um registro identico no repsitório
+    const existing = await this.findByNameExact(cleanName); 
+    // Valida se existe registro identico               
     if (existing) {
-      throw new Error (`Já existe outro grupo cadastrado com este nome: "${cleanName}"`);
+      // Verdadeiro: Gerar mensagem informativa
+      throw new Error(`Já existe um fornecedor cadastrado com este nome: "${cleanName}"`); 
     }
-    // Persiste no banco de dados
+    // Executa a criação do registro no respositório
     return await this.repository.create({
-      nm_group: cleanName,
+      nm_group: cleanName, // Envia o dados
     });
   }
 
-  // Atualiza o registro no banco de dados - Utilizando o ID
-  async update(id_group: number, data: {nm_group: string}): Promise<void> {
+  // Função para atualizar e validar antes de salvar no respositório
+  async update(id_group: number, data: { nm_group: string }): Promise<void> {
+    // Remove os espaços extras do início e fim da string
     const cleanName = data.nm_group.trim();
     // Valida que o id não está entre 1 e 7 (Bloqueado)
-    if (id_group <= 7) {
-      throw new Error ('Não é permitido alterar os grupos padrão do sistema.');
+    if (GroupProductModel.isSystemDefault(id_group)) {
+      // Verdadeiro: Gerar mensagem informativa      
+      throw new Error('Não é permitido alterar os registros padrão do sistema.');
     }
-    // Valida se o campo está preenchido
+    // Valida se apos a limpeza se não existe dado preenchido
     if (!cleanName) {
-      throw new Error ('O nome do grupo não pode estar vazio.');
+      // Verdadeiro: Gerar mensagem informativa
+      throw new Error('O nome do registro não pode estar vazio.');
     }
-    // Regra de negócio: impede duplicação de nome com outro produto cadastrado
+    // Chama a função para verificar se já existe um registro identico no repsitório
     const existing = await this.findByNameExact(cleanName);
-    // Valida para ver se o ID é diferente
+    // Valida de se o registro existe e se o ID é diferente - ID identifica se o registro é diferente do que estamos alterando
     if (existing && existing.id_group !== id_group) {
-      throw new Error (`Já existe outro grupo cadastrado com este nome: "${cleanName}"`);
-    }    
-    // Persiste no banco de dados
+      // Verdadeiro: Gerar mensagem informativa
+      throw new Error('Já existe outro registro cadastrado com este nome.');
+    }
+    // Executa a criação do registro no respositório
     await this.repository.update(id_group, {
       nm_group: cleanName,
     });
   }
 
-  // Deleta o registro no banco de dados - Utilizando o ID
+  // Função para deletar o registro utilizando o ID
   async delete(id_group: number): Promise<void> {
-    // Valida que o id não está entre 1 e 7 (Bloqueado)
-    if (id_group <= 7) {
-      throw new Error('Não é permitido excluir os grupos padrão do sistema.');
+    if (GroupProductModel.isSystemDefault(id_group)) {
+      // Verdadeiro: Gerar mensagem informativa      
+      throw new Error('Não é permitido alterar os registros padrão do sistema.');
     }
-    // Persiste no banco de dados
+    // Executa a exclusão do registro no respositório
     await this.repository.delete(id_group);
   }
 
-  // Regra de Negócio: Valida se os dados foram preenchidos nos campos
+  // Regra de negócio: Valida se o campo foi é preenchido corretamente
   static isValid(name: string): boolean {
-    const hasValidName = name.trim().length > 0;
-    return hasValidName;
+    // Remove o espaço e verifica se o tamanho é maior que 0
+    return name.trim().length > 0;
   }
 
-  // Rega de negócio: Monta a Action (Intent) indicando a ação do payload - Create/Update
+  // Regra de negócio: Valida se o registro pertence ao padrão do sistema (IDs 1 a 7)
+  static isSystemDefault(id_group: number): boolean {
+    return id_group <= 7;
+  }
+
+  // Regar de negócio: Constrói a intenção (Intent) para Salvar/Edita - Fábrica de ações (Action Factory)
   static buildSaveAction(
-    name: string, 
-    isEditing: boolean, 
-    editingId: number | null
+    name: string,             // Valor do campo de texto com o nome do registro
+    isEditing: boolean,       // Indica se o modal é de edição (true) ou novo cadastro (false)
+    editingId: number | null  // Indica se se há ou não um valor (ID)
   ): GroupProductIntent {
+    // Remove os espaços extras do início e fim da string
     const cleanName = name.trim();
-    // Se houver um ID em edição, despacha a ação de atualização
+    // Verificar se o valor é true e diferente de null
     if (isEditing && editingId !== null) {
+      // Verdadeiro: Identifica que é uma edição
       return {
-        type: 'UPDATE',
-        payload: {
-          id_group: editingId,
-          nm_group: cleanName
+        type: 'UPDATE' as const,  // Define o type utilizado o hook
+        payload: {                // Dados necessários para atualizar o registro
+          id_group: editingId, // Atribui o ID recebido
+          nm_group: cleanName, // Atribui o NOME limpo
         },
       };
     }
-    // Caso contrário, despacha a ação de criação de um novo registro
+    // Falso: Identifica que é uma criação
     return {
-      type: 'CREATE',
-      payload: { nm_group: cleanName },
+      type: 'CREATE' as const,  // Define o type utilizado o hook
+      payload: {                // Dados necessários para atualizar o registro
+        nm_group: cleanName, // Atribui o NOME limpo
+      },
     };
   }
-
 }
 
-// Instância pronta para uso na aplicação (singleton)
-export const groupProductModelInstance = new GroupProductModel();
+// Instância padrão injetando o repositório concreto fora da classe
+export const groupProductModelInstance = new GroupProductModel(new GroupProductRepository()); // Cria a instância padrão com o repositório real

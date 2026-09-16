@@ -1,125 +1,105 @@
 // src/features/groupProduct/groupProduct.screen.tsx
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ActivityIndicator, Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import GroupProductForm from './groupProduct.form';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
+import GroupProductForm, { GroupProductActions, GroupProductItem, GroupProductSearchModal } from './groupProduct.form';
 import { useGroupProductViewModel } from './groupProduct.hook';
+import { GroupProductModel } from './groupProduct.model';
 import { styles } from './groupProduct.styles';
 
 export default function GroupProductScreen() {
-  // Obtém o estado atual, estado do formulário e as funções do hook ViewModel
-  const { state, form, saveGroupProduct, dispatch } = useGroupProductViewModel();
+  /* -------- FUNÇÕES EXECUTADAS AO CARREGA A TELA -------- */
+  // Extrai estados e funções de regra de negócio do ViewModel
+  const { state, form, handleSaveData, handleDeleteData } = useGroupProductViewModel();
+  // Controla a visibilidade do modal de cadastro/edição - inicia fechado/oculto
+  const [showForm, setShowForm] = useState(false);
+  // Controla a visibilidade do modal/campo de busca - inicia fechado/oculto
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
-  // Valida e submete o formulário, disparando uma intenção (CREATE ou UPDATE) para o ViewModel
-  const handleSave = async () => {
-    try {
-      const message = await saveGroupProduct();
-      // Gerar alerta informativo  
-      Alert.alert('Sucesso', message);
-    } catch (error: any) {
-      // Captura o erro disparado pela verificação e exibe no popup de aviso
-      Alert.alert('Aviso', error.message || 'Erro ao salvar Grupo.');
-    }
+  /* -------- FUNÇÕES QUE DEPENENDE DE AÇÕES  -------- */
+  // Função para realizar o cadasto do registro
+  const handleOpenCreate = () => {
+    form.resetForm();  // Limpa os campos do formulário para iniciar o cadastro
+    setShowForm(true); // Exibe o modal do formulário na tela
   };
-
-  // MONTAGEM DA TELA
+  // Função para realizar a edição do registro
+  const handleOpenEdit = (id: number, name: string) => {
+    form.startEditing(id, name); // Preenche o formulário com os daos do registro selecionado
+    setShowForm(true);           // Exibe o modal do formulário na tela
+  };
+  // Função para salvar o registro e fechar o formulário
+  const handleSave = async () => {
+    const success = await handleSaveData(); // Chama a função parar salvar os dados do registro
+    if (success) setShowForm(false);            // Se a gravação der certo, fecha o modal do formulário
+  };
+  // Função para fechar o formulário
+  const handleCloseForm = () => {
+    form.resetForm();    //Limpa os campos e reseta o estado do formulário
+    setShowForm(false);  // Fecha/Esconde o modal do formulário na tela
+  };
+  /* -------- MONTAGEM DA TELA -------- */
   return (
     <View style={styles.container}>
-      {/* Título principal da tela */}
-      <Text style={styles.title}>Gerenciar Grupos</Text>
       {/* Indicador visual de carregamento (Spinner) */}
+      <Text style={styles.title}>Grupo Produtos</Text>
+      {/* Feedback de Carregamento e Erros */}
       {state.loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
       {/* Exibição de mensagens de erro, caso ocorram */}
       {state.error && <Text style={styles.error}>{state.error}</Text>}
 
-      {/* Componente do Form para cadastro e edição */}
+       {/* Botões principais de ação */}
+      <GroupProductActions
+        onOpenCreateModal={handleOpenCreate}               // Ação do botão para abrir o modal de novo cadastro
+        onOpenSearchModal={() => setShowSearchModal(true)} // Ação do botão para abrir a janela/campo de busca
+        onClearSearch={() => form.setSearchText('')}       // Ação do botão para limpar o filtro de pesquisa atual
+        hasActiveSearch={form.searchText.length > 0}       // Passa "true" se houver algum texto digitado na busca
+      />
+
+      {/* Formulário para cadastrar ou editar */}
       <GroupProductForm
-        name={form.name}
-        setName={form.setName}
-        isEditing={form.isEditing}
-        onSave={handleSave}
-        onCancel={form.resetForm}
+        showModal={showForm}       // Controla a visibilidade do modal do formulário
+        name={form.name}           // Passa o texto do campo de nome do registro
+        setName={form.setName}     // Passa a função para atualizar o texto do nome
+        isEditing={form.isEditing} // Indica se o modal está em modo de edição ou novo cadastro
+        onSave={handleSave}        // Função executada ao clicar no botão de salvar
+        onCancel={handleCloseForm} // Função executada ao cancelar ou fechar o formulário
       />
       {/* Subtítulo da seção de listagem */}
       <Text style={styles.subtitle}>Grupos Cadastrados</Text>
-      {/* Caixa de texto para pesquisar grupos na lista */}
-      <TextInput
-        style={styles.input}
-        placeholder="Pesquisar Grupo"
-        value={form.searchText}
-        onChangeText={form.setSearchText}
-      />
       {/* Lista (FlatList) para renderizar os registros cadastrados e filtrados */}
       <FlatList
+        // Fonte de dados que será obtidos os itens para monta lista 
         data={state.groups}
+        // Define ID para identificar registros na lista
         keyExtractor={(item) => String(item.id_group)}
-        renderItem={({ item }) => {
-          // Trava de segurança: IDs de 1 a 7 são padrões do sistema e não podem ser editados/excluídos
-          const isSystemDefault = item.id_group <= 7;
-          return (
-            <View style={styles.itemCard}>
-              <View style={styles.itemInfo}>
-                {/* Apresenta a lista com campos */}
-                <View style={styles.textContainer}>
-                  <Text style={styles.itemList}>{item.nm_group}</Text>
-                </View>
-                {/* Container dos botões de ação */}
-                <View style={styles.actionButtonsContainer}>
-                  {/* Verifica se registro é padrão "trava de segurança" */}
-                  {isSystemDefault ? (
-                    // Se for padrão exibe um ícone de cadeado para os registros "Bloqueado"
-                    <View style={styles.iconButton}>
-                      <Text style={{ fontSize: 16 }}>🔒</Text>
-                    </View>
-                  ) : (
-                    // Se não for exibe botões interativos de editar e excluir
-                    <>
-                      {/* Botão de Edição: preenche o formulário com os dados do item selecionado */}
-                      <TouchableOpacity 
-                        style={[styles.iconButton, styles.editButton]} 
-                        onPress={() => form.startEditing(item.id_group, item.nm_group)}
-                      >
-                        {/* Ícone botão de Edição */}
-                        <MaterialCommunityIcons name="pencil-outline" size={20} color="#FFFFFF" />
-                      </TouchableOpacity>
-                      {/* Botão de Exclusão: exibe alerta de confirmação antes de remover o registro */}
-                      <TouchableOpacity 
-                        style={[styles.iconButton, styles.deleteButton]} 
-                        onPress={() => {
-                          Alert.alert(
-                            'Excluir',
-                            `Deseja realmente excluir o grupo "${item.nm_group}"?`,
-                            [
-                              { text: 'Cancelar', style: 'cancel' },
-                              { 
-                                text: 'Excluir', 
-                                style: 'destructive',
-                                onPress: async () => {
-                                  try {
-                                    await dispatch({ type: 'DELETE', payload: item.id_group });
-                                    Alert.alert('Sucesso', 'Grupo excluído com sucesso!');
-                                  } catch (error: any) {
-                                    Alert.alert('Erro', error.message || 'Erro ao excluir o grupo.');
-                                  }
-                                } 
-                              }
-                            ]
-                          );
-                        }}
-                      >
-                        {/* Ícone botão de Exclusão */}
-                        <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FFFFFF" />
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-              </View>
-            </View>
-          );
-        }}
+        //Monta os items na tela
+        renderItem={({ item }) => (
+          // Apresenta dados dos registros e botões de ação
+          <GroupProductItem
+            // Idenifica se o registro é padrão do sistema - Bloqueio para excluir
+            isSystemDefault={GroupProductModel.isSystemDefault(item.id_group)}
+            // Pega a descrição no nome
+            name={item.nm_group}
+            // Editar: Ao clicar no botão pega os dados do registro - Preenche campos
+            onEdit={() => handleOpenEdit(item.id_group, item.nm_group)}
+            // Deletar: Ao clicar no botão delete o registo
+            onDelete={() => handleDeleteData(item.id_group, item.nm_group)}
+          />
+        )}
         // Mensagem exibida caso a lista filtrada esteja vazia
         ListEmptyComponent={
-          !state.loading ? <Text style={styles.emptyText}>Nenhum grupo cadastrado.</Text> : null
+          !state.loading ? <Text style={styles.emptyText}>Nenhum registro encontrado.</Text> : null
         }
+      />
+      {/* Modal para Buscar/Filtro registros */}
+      <GroupProductSearchModal
+        visible={showSearchModal}                 // Passa o estado que controla a exibição da busca
+        searchText={form.searchText}              // Passa o texto atual digitado para o filtro
+        onChangeSearchText={form.setSearchText}   // Passa a função que atualiza o texto do filtro
+        onClose={() => setShowSearchModal(false)} // Passa a função para fechar o modal/campo de busca
+        onCancel={() => {                         // Passa a função quando cancela a pesquisa/filtragem
+          form.setSearchText('');                 // Limpa o texto pesquisado
+          setShowSearchModal(false);              // Esconde o modal
+        }}
       />
     </View>
   );

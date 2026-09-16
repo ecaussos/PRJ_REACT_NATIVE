@@ -1,21 +1,21 @@
-// src/features/groupProduct/groupProduct.styles.ts
+// src/features/supplier/supplier.styles.ts
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   // Container principal que envolve toda a tela
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    paddingTop: 50,
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    backgroundColor: '#f8f9fa', 
+    paddingTop: 50 
   },
   // Estilo do título principal da tela
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#333',
+  title: { 
+    fontSize: 32, 
+    fontWeight: 'bold', 
+    marginBottom: 12, 
+    textAlign: 'center', 
+    color: '#333' 
   },
   // Estilo dos subtítulos de seções
   subtitle: {
@@ -25,18 +25,97 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#444',
   },
-  // Espaçamento vertical para o indicador de carregamento (ActivityIndicator)
-  loader: {
-    marginVertical: 20,
+  // Espaçamento vertical para o indicador de carregamento
+  loader: { 
+    marginVertical: 10 
   },
-  // Estilo para destacar mensagens de erro na interface
-  error: {
-    color: '#FF3B30',
+  // Estilo para destacar mensagens de erro
+  error: { 
+    color: '#FF3B30', 
+    marginBottom: 8, 
+    textAlign: 'center', 
+    fontWeight: '600' 
+  },
+  // Seção superior de ações na tela principal
+  sectionContainer: {
     marginBottom: 12,
-    textAlign: 'center',
-    fontWeight: '600',
   },
-  // Card branco que agrupa os elementos do formulário de cadastro e edição
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  // Botão customizado principal de adicionar/ações
+  actionButtonAdd: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  // Overlay ajustado para o topo para permitir a visualização da lista ao fundo
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Fundo semitransparente suave
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 40, // Reduzido para posicionar bem no topo
+  },
+  // Container de conteúdo do Modal
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  // Container para empilhar botões (usado no cadastro)
+  modalButtonsContainer: {
+    gap: 8,
+    marginTop: 8,
+  },
+  // Linha horizontal de botões para o modal de busca
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  // Estilo dos botões da linha horizontal
+  modalRowButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Card branco (preservado)
   formCard: {
     backgroundColor: '#fff',
     padding: 16,
@@ -48,22 +127,21 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
-  // Espaçamento superior do container do botão cancelar
   cancelButtonContainer: {
     marginTop: 8,
   },
-  // Estilo padrão para as caixas de texto (Inputs)
+  // Inputs
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 12,
-    height: 45,
+    height: 42,
     color: '#333',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  // Card individual que exibe as informações na lista
+  // Card da lista
   itemCard: {
     backgroundColor: '#fff',
     padding: 12,
@@ -75,23 +153,19 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 1,
   },
-  // Layout interno do card para alinhar o texto à esquerda e os botões de ação à direita
   itemInfo: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    alignItems: 'center',
+    alignItems: 'center' 
   },
-  // Container do texto do item da lista
   textContainer: {
     flex: 1,
     marginRight: 8,
   },
-  // Container que organiza os botões de ícone (editar e excluir) lado a lado
   actionButtonsContainer: { 
     flexDirection: 'row', 
-    gap: 8,
+    gap: 8 
   },
-  // Estilo base para os botões modernos em formato de ícone quadrado com sombra
   iconButton: {
     width: 38,
     height: 38,
@@ -104,24 +178,20 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
-  // Cor de fundo específica para o botão de editar (azul)
   editButton: { 
-    backgroundColor: '#0051FF',
+    backgroundColor: '#0051FF' 
   },
-  // Cor de fundo específica para o botão de excluir (vermelho)
   deleteButton: { 
-    backgroundColor: '#FF0000',
+    backgroundColor: '#FF0000' 
   },
-  // Estilo do nome exibido no card da lista
   itemList: { 
     fontSize: 16, 
     fontWeight: 'bold', 
-    color: '#222',
+    color: '#222' 
   },
-  // Estilo do texto exibido na lista quando não há cadastrados
   emptyText: { 
     textAlign: 'center', 
     color: '#888', 
-    marginTop: 20,
+    marginTop: 20 
   },
 });

@@ -1,102 +1,100 @@
 // src/features/buyList/buyList.screen.tsx
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
-import { ActivityIndicator, Alert, Button, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { BuyListActions, BuyListForm } from './buyList.form';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
+import {
+  BuyListActions,
+  BuyListAddItemModal,
+  BuyListCameraModal,
+  BuyListEditModal,
+  BuyListFilterModal,
+  BuyListItemModal,
+  BuyListSearchModal,
+} from './buyList.form';
 import { useBuyListViewModel } from './buyList.hook';
 import { styles } from './buyList.styles';
 
-export default function BuyListScreen(): React.JSX.Element {
-  // Obtém o estado, manipuladores e funções de orquestração diretamente do ViewModel
+export default function BuyListScreen() {
+  /* -------- FUNÇÕES EXECUTADAS AO CARREGAR A TELA -------- */
+  // Extrai estados e funções de regra de negócio do ViewModel
   const {
-    state,
-    form,
-    dispatch,
-    filteredItems,
-    searchProductsByName,
-    handleScanSuccess,
-    handleSelectProductToBuy,
-    handleSaveQuantity,
-    startEditing,
+    state,                      // Estado global da lista de compras (itens, carregamento, erros)
+    form,                       // Controle dos campos de formulário e modais
+    handleSaveData,             // Salva ou atualiza um item na lista
+    handleDeleteData,           // Remove um item específico da lista
+    handleClearList,            // Limpa todos os itens da lista atual
+    handleScanSuccess,          // Processa o produto encontrado pelo código de barras
+    handleSearchProductByName,  // Executa a busca de produtos por nome
+    handleSelectProductToBuy,   // Adiciona o produto selecionado à lista de compras
   } = useBuyListViewModel();
 
-  // MONTAGEM DA TELA
+  // Controla a visibilidade do modal unificado de adição de produto (Câmera ou Nome)
+  const [showAddModal, setShowAddModal] = useState(false);
+  // Controla a visibilidade do modal de filtragem - inicia fechado/oculto
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  // Controla a visibilidade do modal de Scanner (Adicionar produto) - inicia fechado/oculto
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  // Controla a visibilidade do modal de Por Nome (Adicionar produto) - inicia fechado/oculto
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
+  /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
+
+  // Função para realizar a edição do registro
+  const handleOpenEdit = (id: number, quantity: number) => {
+    form.startEditing(id, quantity); // Preenche o formulário com os dados do registro selecionado
+  };
+
+  // Função para salvar o registro e fechar o formulário de edição
+  const handleSave = async () => {
+    await handleSaveData(); // Chama a função para salvar os dados do registro
+  };
+
+  // Função para fechar o formulário de edição
+  const handleCloseForm = () => {
+    form.resetForm(); // Limpa os campos e reseta o estado do formulário
+  };
+
+  // Obtém o item em edição para passar as propriedades (ex: nm_product) ao modal de edição
+  const activeEditingItem = state.items.find(item => item.id_list_buy === form.editingId);
+
+  /* -------- MONTAGEM DA TELA -------- */
   return (
     <View style={styles.container}>
-      {/* Título principal da tela */}
-      <Text style={styles.title}>Lista de Compras</Text>
+      {/* Título da Tela */}
+      <Text style={styles.title}>Lista de Compra</Text>
       {/* Indicador visual de carregamento (Spinner) */}
       {state.loading && <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />}
       {/* Exibição de mensagens de erro, caso ocorram */}
       {state.error && <Text style={styles.error}>{state.error}</Text>}
 
-      {/* Componente das Ações Principais - Adicionar Produto */}
+      {/* Botões principais de ação - Adicionar, Filtrar e Limpar */}
       <BuyListActions
-        onOpenCamera={() => form.setShowCameraModal(true)}
-        onOpenNameSearch={() => {
-          form.setProductQuery('');
-          form.setFoundProducts([]);
-          form.setShowNameSearchModal(true);
-        }}
+        onOpenCreateModal={() => setShowAddModal(true)} // Ação do botão para mostrar modal para adicionar item Código/Nome
+        onOpenFilterModal={() => setShowFilterModal(true)} // Ação do botão para mostrar modal de filtragem de registro
+        onClearSearch={() => form.setSearchText('')} // Ação do botão para limpar a filtragem de registro atual
+        hasActiveSearch={form.searchText.length > 0} // Passa "true" se houver algum texto digitado na busca
+        onClearList={handleClearList} // Ação do botão para limpar toda a lista
       />
-
       {/* Subtítulo da seção de listagem */}
-      <Text style={styles.subtitle}>Produtos Listados</Text>
-      {/* Caixa de texto para pesquisar produtos na lista */}
-      <TextInput
-        style={styles.input}
-        placeholder="Pesquisar Produto"
-        placeholderTextColor="#888"
-        value={form.searchText}
-        onChangeText={form.setSearchText}
-      />
+      <Text style={styles.subtitle}>Produtos na Lista de Compras</Text>
       {/* Lista (FlatList) para renderizar os registros cadastrados e filtrados */}
       <FlatList
-        data={filteredItems}
+        // Fonte de dados que será obtida para montar a lista
+        data={state.items}
+        // Define ID para identificar registros na lista
         keyExtractor={(item) => String(item.id_list_buy)}
+        // Monta os itens na tela
         renderItem={({ item }) => (
-          <View style={styles.itemCard}>
-            <View style={styles.itemInfo}>
-              {/* Apresenta a lista com campos */}
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.ItemList}>{item.nm_product}</Text>
-                <Text style={styles.details}>{item.nm_group || 'Categoria Geral'}</Text>
-                <Text style={styles.quantity}>Quantidade: {item.qt_product}</Text>
-              </View>
-              {/* Container dos botões de ação */}
-              <View style={styles.actionButtonsContainer}>
-                {/* Botão de Edição: preenche o formulário com os dados do item selecionado */}
-                <TouchableOpacity
-                  style={[styles.iconButton, styles.editButton]}
-                  onPress={() => startEditing(item)}
-                > 
-                  {/* Ícone botão de Edição */}
-                  <MaterialCommunityIcons name="pencil-outline" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-                {/* Botão de Exclusão: exibe alerta de confirmação antes de remover o registros */}
-                <TouchableOpacity
-                  style={[styles.iconButton, styles.deleteButton]}
-                  onPress={() => {
-                    Alert.alert(
-                      'Remover',
-                      `Deseja remover "${item.nm_product}" da lista?`,
-                      [
-                        { text: 'Cancelar', style: 'cancel' },
-                        {
-                          text: 'Remover',
-                          style: 'destructive',
-                          onPress: () => dispatch({ type: 'DELETE', payload: { id_list_buy: item.id_list_buy } }),
-                        },
-                      ]
-                    );
-                  }}
-                >
-                  {/* Ícone botão de Exclusão */}
-                  <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+          // Apresenta dados dos registros e botões de ação
+          <BuyListItemModal
+            // Pega a descrição no nome
+            name={item.nm_product} // Passa o nome do produto cadastrado
+            groupName={item.nm_group} // Passa o nome do grupo retornado pelo JOIN
+            quantity={item.qt_product} // Passa a quantidade cadastrada
+            // Editar: Ao clicar no botão pega os dados do registro - Preenche campos
+            onEdit={() => handleOpenEdit(item.id_list_buy, item.qt_product)}
+            // Deletar: Ao clicar no botão delete o registro
+            onDelete={() => handleDeleteData(item.id_list_buy, item.nm_product)}
+          />
         )}
         // Mensagem exibida caso a lista filtrada esteja vazia
         ListEmptyComponent={
@@ -104,44 +102,79 @@ export default function BuyListScreen(): React.JSX.Element {
         }
       />
 
-      {/* Botão remove todos os produtos da lista de compra*/}
-      {state.items.length > 0 && (
-        <View style={styles.footer}>
-          <Button
-            title="Limpar Lista Completa"
-            color="#FF3B30"
-            onPress={() => {
-              Alert.alert('Limpar Lista', 'Deseja realmente apagar todos os itens?', [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Limpar', style: 'destructive', onPress: () => dispatch({ type: 'CLEAR' }) },
-              ]);
-            }}
-          />
-        </View>
-      )}
+      {/* 1. Modal Opções para Adicionar produto (Código de Barra/Nome) */}
+      <BuyListAddItemModal
+      showModal={showAddModal}                  // Exibe ou oculta o modal principal de adição
+        onOpenCamera={() => {                   // Passa a função para acionar a opção de código de barra (Câmera)
+          setShowAddModal(false);               // Oculta o modal de seleção de opções
+          setShowCameraModal(true);             // Exibe o modal do leitor de código de barras
+        }}                                        
+        onOpenSearch={() => {                   // Passa a função para acionar a busca por nome
+          setShowAddModal(false);               // Oculta o modal de seleção de opções
+          setShowSearchModal(true);             // Exibe o modal de pesquisa por nome para a seleção de produtos
+        }}
+        onClose={() => setShowAddModal(false)}  // Oculta o modal de adição ao cancelar/fechar
+      />
 
-      {/* Modais de ação do Formulário - Camera, Busca nome e Quantidade */}
-      <BuyListForm
-        // Modal Câmera
-        showCameraModal={form.showCameraModal}
-        onScanSuccess={handleScanSuccess}
-        onCloseCameraModal={() => form.setShowCameraModal(false)}
+      {/* 2. Modal para adicionar produto por código de barra (Câmera) */}
+      <BuyListCameraModal
+        showModal={showCameraModal}                             // Exibe ou oculta o modal do leitor de código de barra
+        onScanSuccess={async (barcode) => {                     // Passa a função que executado ao ler um código de barras
+          const addAnother = await handleScanSuccess(barcode);  // Processa a leitura e aguarda respota alerta finaliza operação (Hook)
+          if (!addAnother) {                                    // Verfiicar se vai adicionar outro item
+            setShowCameraModal(false);                          // Verdadeiro: Oculta o modal código de barra
+          }
+        }}
+        onClose={() => setShowCameraModal(false)}               // Oculta o modal código de barra ao cancelar/fechar
+      />
 
-        // Modal Busca por Nome
-        showNameSearchModal={form.showNameSearchModal}
-        productQuery={form.productQuery}
-        foundProducts={form.foundProducts}
-        isSearching={form.isSearching}
-        onSearchProductQueryChange={searchProductsByName}
-        onSelectProductToBuy={handleSelectProductToBuy}
-        onCloseNameSearchModal={() => form.setShowNameSearchModal(false)}
+      {/* 3. Modal para adicionar produto por Nome (Pesquisa) */}
+      <BuyListSearchModal
+        showModal={showSearchModal}                                   // Exibe ou oculta o modal de pesquisa por nome
+        searchText={form.modalSearchText || ''}                       // Armazena o texto digitado no campo de busca do modal
+        searchResults={state.searchResults}                           // Lista com os produtos encontrados na busca
+        onChangeSearchText={(text) => {                               // Função para executadar buscar ao alterar o texto
+          form.setModalSearchText?.(text);                            // Atualiza o estado do texto de busca no formulário
+          handleSearchProductByName(text);                            // Função para executar a busca de produtos por nome (Hook)
+        }}
+        onSelectProduct={async (product) => {                         // Função para executar quando um produto for selecionado
+          const addAnother = await handleSelectProductToBuy(product); // Processa a inclusão no Hook e aguarda resposta do alerta
+          if (!addAnother) {                                          // Verificar se vai adicionar outro item
+            setShowSearchModal(false);                                // Verdadeiro: Oculta o modal pesquisa por nome
+          }
+        }}
+        onBack={() => {                                               // Função executada ao clicar no botão de voltar
+          setShowSearchModal(false);                                  // Oculta o modal de pesquisa por nome
+          form.setModalSearchText?.('');                              // Limpa o texto digitado no campo de busca
+          setShowAddModal(true);                                      // Exibe o modal inicial de opções
+        }}
+        onCancel={() => {                                             // Função executada ao cancelar a operação
+          setShowSearchModal(false);                                  // Oculta o modal de pesquisa
+          form.setModalSearchText?.('');                              // Limpa o texto digitado no campo de busca
+        }}
+      />
 
-        // Modal Atualizar Quantidade
-        editingQuantityItem={form.editingQuantityItem}
-        newQuantityText={form.newQuantityText}
-        onChangeQuantityText={form.setNewQuantityText}
-        onSaveQuantity={handleSaveQuantity}
-        onCloseQuantityModal={() => form.setEditingQuantityItem(null)}
+      {/* 4. Modal para filtrar/localizar registros cadastrados */}
+      <BuyListFilterModal
+        visible={showFilterModal}                 // Passa o estado que controla a exibição da busca
+        searchText={form.searchText}              // Passa o texto atual digitado para o filtro
+        onChangeSearchText={form.setSearchText}   // Passa a função que atualiza o texto do filtro
+        onClose={() => setShowFilterModal(false)} // Passa a função para fechar o modal/campo de busca
+        onCancel={() => {                         // Passa a função quando cancela a pesquisa/filtragem
+          form.setSearchText('');                 // Limpa o texto pesquisado
+          setShowFilterModal(false);              // Esconde o modal
+        }}
+      />
+
+      {/* 5. Modal para editar a quantidade de itens da lista de compra */}
+      <BuyListEditModal
+        showModal={form.isEditing}                 // Exibe/oculta baseado na flag de edição
+        name={activeEditingItem?.nm_product || ''} // Passa o nome do produto selecionado
+        quantity={form.quantity}                   // Valor da quantidade em texto
+        setQuantity={form.setQuantity}             // Função para atualizar a quantidade
+        isEditing={form.isEditing}                 // Passa a flag do formulário
+        onSave={handleSave}                        // Função executada ao clicar no botão de salvar
+        onCancel={handleCloseForm}                 // Função executada ao cancelar ou fechar o formulário
       />
     </View>
   );

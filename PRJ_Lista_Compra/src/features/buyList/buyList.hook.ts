@@ -1,310 +1,296 @@
 // src/features/buyList/buyList.hook.ts
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { ProductEntity } from '../../data/entities/product.entity';
-import { BuyListModel, BuyListModelInstance, EditingQuantityItem, ProductSearchResult } from './buyList.model';
-import { BuyListFormState, BuyListIntent, BuyListState } from './buyList.types';
+import { BuyListModel, BuyListModelInstance } from './buyList.model';
+import { BuyListIntent, BuyListState, ProductSearchResult } from './buyList.types';
 
 export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) {
-  // Estado centralizado gerenciado pelo padrão MVI
+  // Estado centralizado de carregamento, erros e lista
   const [state, setState] = useState<BuyListState>({
-    items: [],
-    loading: false,
-    error: null,
+    items: [],          // Lista inicial de registros cadastrados (vazia)
+    searchResults: [],  // Lista de resultados da busca de produtos
+    loading: false,     // Flag para controle de spinner/loading durante requisições
+    error: null,        // Mensagem de erro capturada nas operações (null) 
   });
 
-  // Estados locais de UI (formulários, modais e filtros)
-  // Camera
-  const [showCameraModal, setShowCameraModal] = useState(false);
+  // Estados locais para controle de formulário, campo de busca e edição
+  const [productId, setProductId] = useState('');                                   // Armazena o valor digitado no campo de grupo
+  const [quantity, setQuantity] = useState('1');                                    // Armazena o valor digitado no campo quantidade
+  const [searchText, setSearchText] = useState('');                                 // Armazena o termo de filtragem na listagem
+  const [editingId, setEditingId] = useState<number | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
+  const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca de produto código/nome
 
-  // Busca por Nome 
-  const [searchText, setSearchText] = useState('');
-  const [showNameSearchModal, setShowNameSearchModal] = useState(false);
-  const [productQuery, setProductQuery] = useState('');
-  const [foundProducts, setFoundProducts] = useState<ProductSearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Edição de Quantidade
-  const [editingQuantityItem, setEditingQuantityItem] = useState<EditingQuantityItem | null>(null);
-  const [newQuantityText, setNewQuantityText] = useState('');
-
-  // Reseta o formulário e fecha modais abertos
+  // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
-    setShowCameraModal(false);
-    setShowNameSearchModal(false);
-    setProductQuery('');
-    setFoundProducts([]);
-    setIsSearching(false);
-    setEditingQuantityItem(null);
-    setNewQuantityText('');
+    setProductId('');           // Limpa o texto do campo de ID produto
+    setQuantity('1');           // Limpa o texto do campo quantidade e associa valor padrão 1
+    setSelectedProductId(null); // Limpa o id do produto selecionado na busca código/nome
+    setEditingId(null);         // Limpa o ID, voltando o formulário para modo de criação
   }, []);
 
-  // Auxiliar para atualização imutável do estado do ViewModel
-  const updateState = (updates: Partial<BuyListState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  };
-
-  // Dispatch: Processador de intenções da interface (Intents) - MVI
-  const dispatch = useCallback(
-    async (intent: BuyListIntent): Promise<ProductEntity | void> => {
-      try {
-        updateState({ loading: true, error: null });
-
-        switch (intent.type) {
-          case 'LOAD': {
-            // Busca registros na lista de compra
-            const itemsData = await model.fetchItems();
-            // Atualiza os estados
-            setState(prev => ({ ...prev, items: itemsData, loading: false }));
-            break;
-          }
-
-          case 'CREATE': {
-            // Executa a criação do registro
-            await model.create(intent.payload);
-            // Limpa formulário
-            resetForm();
-            // Atualiza a lista e dados em memória
-            const itemsData = await model.fetchItems();
-            // Atualiza os estados
-            setState(prev => ({ ...prev, items: itemsData, loading: false }));
-            break;
-          }
-
-          case 'CREATE_BY_BARCODE': {
-            // Executa a criação do registro utilizando código de barras
-            const product = await model.createByBarcode(intent.payload.barcode);
-            // Limpa formulário
-            resetForm();
-            // Atualiza a lista e dados em memória
-            const itemsData = await model.fetchItems();
-            // Atualiza os estados
-            setState(prev => ({ ...prev, items: itemsData, loading: false }));
-            // Retorna o produto cadastrado
-            return product;
-          }
-
-          case 'UPDATE_QUANTITY': {
-            // Executa a atualização do registro - quantidade
-            await model.updateQuantity(intent.payload);
-            // Limpa formulário
-            resetForm();
-            // Atualiza a lista e dados em memória            
-            const itemsData = await model.fetchItems();
-            // Atualiza os estados
-            setState(prev => ({ ...prev, items: itemsData, loading: false }));
-            break;
-          }
-
-          case 'DELETE': {
-            // Executa a exclusão do registro
-            await model.delete(intent.payload);
-            // Atualiza a lista e dados em memória
-            const itemsData = await model.fetchItems();
-            // Atualiza os estados
-            setState(prev => ({ ...prev, items: itemsData, loading: false }));
-            break;
-          }
-
-          case 'CLEAR': {
-            // Executa a exclusão de todos os registros
-            await model.clear();
-            // Atualiza os estados
-            updateState({ items: [], loading: false });
-            break;
-          }
-        }
-      } catch (err: any) {
-        // Captura e formata erros lançados pela Model ou pelo Repositório
-        const errorMessage = err?.message || 'Erro ao processar intenção na lista de compras.';
-        // Atualiza os estados
-        updateState({ error: errorMessage, loading: false });
-        // Lança a exceção para o caller
-        throw err;
-      }
-    },
-    // Conclui se houver alteração de status
-    [model, resetForm]
-  );
-
-  // ORQUESTRAÇÃO DA SCREEN E INTERAÇÃO COM A MODEL
-  // Busca de produtos por nome no modal
-  const searchProductsByName = useCallback(
-    async (query: string) => {
-      //Pega o texto digitado
-      setProductQuery(query);
-      // Revemos os espaço ini/fim do texto digitado
-      const cleanQuery = query.trim();
-      // Validar se o texto está vazio
-      if (cleanQuery.length === 0) {
-        // Verdadeiro: limpa a lista de resultados caso o campo esteja vazio
-        setFoundProducts([]);
-        return;
-      }
-      try {
-        // Ativa: Indicador visual de carregamenteo
-        setIsSearching(true);
-        // Realizar a busca do produto 
-        const results = await model.searchProductsByName(cleanQuery);
-        // Amazenar e retorno os produtos encontrados
-        setFoundProducts(results);
-      } catch (error) {
-        // Gera mensagem informativa
-        console.error('Erro ao buscar produtos por nome:', error);
-        // Limpa a lista de resultados caso o campo esteja vazio
-        setFoundProducts([]);
-      } finally {
-        // Desativa: Indicador visual de carregamenteo
-        setIsSearching(false);
-      }
-    },
-    // Conclui se houver alteração de status
-    [model]
-  );
-
-  // Seleção de produto na busca por nome
-  const handleSelectProductToBuy = useCallback(
-    // Recebe o produto selecionado na busca por nome
-    async (item: ProductSearchResult) => {
-      try {
-        // envia a intenção de realizar a adição de produto selecionado
-        await dispatch({
-          // Processa a adição do registro
-          type: 'CREATE',
-          // Envia o dados do produto selecionado
-          payload: { id_product: item.id_product, qt_product: 1 },
-        });
-        // Gerar mensagem informativa
-        Alert.alert('Sucesso', `${item.nm_product} adicionado à lista!`);
-      } catch (error: any) {
-        // Limpa o fomulário
-        resetForm();
-        // Gerar mensagem informativa
-        Alert.alert('Erro', error?.message || 'Não foi possível adicionar o produto selecionado.');
-      }
-    },
-    // Conclui se houver alteração de status
-    [dispatch, resetForm]
-  );
-
-  // Busca produto utilizando Leitura de código de barras - Câmera
-  const handleScanSuccess = useCallback(
-    async (barcode: string) => {
-      try {
-        // envia a intenção de realizar a adição de produto por código de barra
-        const product = await dispatch({
-          // Processa o cadastro via código de barra
-          type: 'CREATE_BY_BARCODE',
-          // Envia o código de barra capturado
-          payload: { barcode },
-        });
-        // Verificar se retorno um produto
-        if (product) {
-          // Verdadeiro: Gera mensagem informativa
-          Alert.alert('Sucesso', `${product.nm_product} adicionado à lista!`);
-        }
-      } catch (error: any) {
-        // Limpar formulário
-        resetForm();
-        // Gerar mensagem informativa
-        Alert.alert('Aviso', error?.message || 'Não foi possível adicionar o produto.');
-      }
-    },
-    // Conclui se houver alteração de status
-    [dispatch, resetForm]
-  );
-
-  // Altera a quantidade de produto no lista de compras
-  const handleSaveQuantity = useCallback(async () => {
-    // Verifica não tem item selecionado - Verdadeiro para a operação
-    if (!editingQuantityItem) return;
-    // Chama o model para validar se a quantidade dígitada não é valida
-    if (!BuyListModel.isValidQuantity(newQuantityText)) {
-      // Verdadeiro: Gerar mensagem informativa
-      Alert.alert('Atenção', 'Informe uma quantidade válida e maior que zero.');
-      return;
-    }
+  // Processador de intenções da interface (MVI)  
+  const dispatch = useCallback(async (intent: BuyListIntent) => {
+    // Ativa o estado de carregamento e reseta mensagens de erro anteriores
+    setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      // Chama o model para atualizar a quantidade
-      const action = BuyListModel.buildSaveQuantityAction(
-        // Passa o id do item que está sendo alterado
-        editingQuantityItem.id_list_buy,
-        // Passa a nova quantidade informada
-        newQuantityText
-      );
-      // Envia a solicitação
-      await dispatch(action);
-      // Gerar mensagem informativa
-      Alert.alert('Sucesso', 'Quantidade atualizada com sucesso!');
-    } catch (error: any) {
-      // Limpa Formulário
-      resetForm();
-      // Gerar mensagem informativa
-      Alert.alert('Aviso', error?.message || 'Erro ao salvar a quantidade.');
+      switch (intent.type) {                                                        // Obtém os valores do Intent do type 
+        case 'LOAD': {                                                              // Se a intenção for igual a LOAD
+          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros e armazena
+          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza o estado mantendo os anteriores
+          break;
+        }
+        case 'CREATE': {                                                            // Se a intenção for igual a CREATE 
+          await model.create(intent.payload.id_product, intent.payload.qt_product); // Envia a intenção de criar com os campos
+          resetForm();                                                              // Limpa formulário
+          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros
+          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza os itens do estado
+          break;
+        }
+        case 'UPDATE': {                                                            // Se a intenção for igual a UPDATE
+          await model.update(intent.payload.id_list_buy, intent.payload.qt_product);// Envia a intenção de atualização
+          resetForm();                                                              // Limpa formulário                             
+          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros
+          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza os itens do estado
+          break;
+        }
+        case 'DELETE': {                                                            // Se a intenção for igual a DELETE
+          await model.delete(intent.payload);                                       // Envia a intenção para deletar
+          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros
+          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza os itens do estado
+          break;
+        }
+        case 'CLEAR_LIST': {                                                        // Se a intenção for igual a Excluir toda a lista
+          await model.clear();                                                      // Envia a intenção para excluir tudo
+          setState(prev => ({ ...prev, items: [], loading: false }));               // Esvazia os itens do estado
+          break;
+        }
+      }
+    } catch (err) {
+      // Captura e formata erros lançados pela Model ou pelo Repositório
+      const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro na operação.';
+      // Mantém os estados anteriores e registra a mensagem de falha
+      setState(prev => ({ ...prev, error: errorMessage, loading: false }));
+      // Lança a exceção para o componente chamador
+      throw err;
     }
-    // Conclui se houver alteração de status
-  }, [editingQuantityItem, newQuantityText, dispatch, resetForm]);
+  // Recria a função caso o model ou resetForm mudem
+  }, [model, resetForm]);   
 
-  // Contrato do status do Formulário
-  const form: BuyListFormState = {
-    searchText,
-    setSearchText,
-    editingQuantityItem,
-    setEditingQuantityItem,
-    newQuantityText,
-    setNewQuantityText,
-    showNameSearchModal,
-    setShowNameSearchModal,
-    productQuery,
-    setProductQuery,
-    foundProducts,
-    setFoundProducts,
-    isSearching,
-    setIsSearching,
-    showCameraModal,
-    setShowCameraModal,
+  // Função para salvar, validar e gerar mensagem correspondente às ações do formulário
+  const handleSaveData = async (): Promise<boolean> => {                // Função assíncrona que retorna boolean de confirmação
+     if (!BuyListModel.isValid(productId, quantity)) {                  // Executa validações de dados obrigatórios
+        Alert.alert('Aviso', 'Preencha os campos para o registro!');    // Alerta o usuário em caso de dados inválidos
+      return false;                                                     // Interrompe a execução e retorna falso
+    }
+    const isEditing = editingId !== null;                               // Avalia se está em modo de edição (true) ou criação (false)
+    const action = BuyListModel.buildSaveAction(                        // Monta o objeto de intenção para gravação
+      productId, quantity, isEditing, editingId                         // Passa os valores digitados no formulário
+    );
+    try {
+      await dispatch(action);                                           // Envia a ação MVI para processamento
+      const successMessage = isEditing                                  // Define a mensagem dinâmica com base na operação
+        ? 'Registro atualizado com sucesso!'                            // Exibe mensagem para atualização
+        : 'Registro cadastrado com sucesso!';                           // Exibe mensagem para novo cadastro
+      Alert.alert('Sucesso', successMessage);                           // Exibe caixa de diálogo confirmando o sucesso
+      return true;                                                      // Retorna verdadeiro sinalizando conclusão com sucesso
+    } catch (err: any) {
+      Alert.alert('Erro', err.message || 'Erro ao salvar o registro.'); // Exibe mensagem caso a operação falhe
+      return false;                                                     // Retorna falso sinalizando falha na gravação
+    }
   };
 
-  // Executa o carregamento inicial dos dados assim que o hook é montado na tela
-  useEffect(() => {
-    dispatch({ type: 'LOAD' }).catch(() => {});
-  }, [dispatch]);
+  // Função para apresentar o modal de confirmação de exclusão
+  const handleDeleteData = (id: number, name: string) => {                      // Recebe ID e nome do item para exibição na mensagem
+    Alert.alert(                                                                // Exibe alerta de confirmação nativo
+      'Excluir',                                                                // Título da caixa de diálogo
+      `Deseja realmente excluir o registro "${name}"?`,                         // Mensagem de confirmação com o nome do item
+      [                                                                         // Array de botões de ação do alerta
+        { text: 'Cancelar', style: 'cancel' },                                  // Botão para cancelar a operação
+        { text: 'Excluir',                                                      // Opção para confirmar a exclusão
+          style: 'destructive',                                                 // Estilo visual de alerta
+          onPress: async () => {                                                // Ação executada ao confirmar exclusão
+            try {
+              await dispatch({ type: 'DELETE', payload: id });                  // Envia a intenção MVI de exclusão passando o ID
+              Alert.alert('Sucesso', `Registro ${name} excluído com sucesso!`); // Exibe mensagem após executar a operação
+            } catch (err: any) {
+              Alert.alert('Erro', err.message || 'Erro ao excluir o produto.'); // Exibe mensagem caso a operação falhe
+            }
+          },
+        },
+      ]
+    );
+  };
 
-  // Filtra a lista em tempo real com base no texto pesquisado
+  // Função para apresentar o modal de confirmação de exclusão total da lista
+  const handleClearList = () => {                                             // Função para limpar todos os itens da lista
+    Alert.alert(                                                              // Exibe alerta de confirmação nativo
+      'Limpar Lista',                                                         // Título da caixa de diálogo
+      'Deseja realmente apagar todos os itens da sua lista de compras?',      // Mensagem de confirmação
+      [                                                                       // Array de botões de ação do alerta
+        { text: 'Cancelar', style: 'cancel' },                                // Botão para cancelar a operação
+        { text: 'Confirmar',                                                  // Botão de confirmação para limpar a lista
+          style: 'destructive',                                               // Estilo visual de alerta
+          onPress: async () => {                                              // Ação executada ao confirmar a limpeza da lista
+            try {
+              await dispatch({ type: 'CLEAR_LIST' });                         // Envia a intenção para limpar os registros no estado
+              Alert.alert('Sucesso', 'Lista de compras limpa!');              // Exibe confirmação após executar a operação
+            } catch (err: any) {
+              Alert.alert('Erro', err.message || 'Erro ao limpar a lista.');  // Exibe aviso caso a operação falhe
+            }
+          },
+        }
+      ]
+    );
+  };
+
+  // Leitura de código de barras via câmera delegando a busca e criação ao Model
+  const handleScanSuccess = useCallback(async (barcode: string): Promise<boolean> => {
+      try {
+        const addProduct = await model.createByBarcode(barcode);                // Executa função busca/inserção do produto por código de barras
+        await dispatch({ type: 'LOAD' });                                       // Envia a intenção para recarrega a lista de produtos atualizada
+
+        const product = addProduct.nm_product;                                  // Define o nome do produto
+
+        return await new Promise<boolean>((addAnother) => {                     // Aguarda retorno para adicionar outro produto
+          Alert.alert(                                                          // Exibe alerta de confirmação nativo
+            'Sucesso',                                                          // Título da caixa de diálogo
+            `${product} adicionado à lista!\nDeseja adicionar outro produto?`,  // Exibe mensagem para a seleção da opção
+            [                                                                   // Array de botões de ação do alerta
+              { text: 'Não',                                                    // Opção para encerrar a operação
+                style: 'cancel',                                                // Estilo do botão
+                onPress: () => {                                                // Ação executada ao clicar no botão 
+                  resetForm();                                                  // Limpa os dados do formulário
+                  addAnother(false);                                            // Retonar adicionar outro produto com NÃO (False)
+                },
+              },
+              { text: 'Sim',                                                    // Opção para continuar a operação outro produto
+                onPress: () => {                                                // Ação executada ao clicar no botão 
+                  addAnother(true);                                             // Retonar adicionar outro produto com SIM (True)
+                },
+              },
+            ]
+          );
+        });
+      } catch (error: any) {                                                    // Em caso de falha da operação
+        Alert.alert(                                                            // Exibe alerta de confirmação nativo
+          'Erro',                                                               // Título do alerta exibido em caso de falha
+          error?.message || 'Erro ao adicionar o produto por código de barras.' // Exibe messagem extraída do erro capturado
+        );
+        return true;                                                            // Mantém o modal código de barra aberto
+      }
+    },
+    [dispatch, model, resetForm]                                                // Dependências do hook para garantir a atualização da função
+  );
+
+  // Realiza a busca dinâmica de produtos por nome ou código para o Modal
+  const handleSearchProductByName = useCallback(
+    async (product: string) => {
+      try {
+        const results = await model.searchProducts(product);        // Consulta os produtos no Model utilizando o termo higienizado
+        setState((prev) => ({ ...prev, searchResults: results }));  // Atualiza a lita com os resultados encontrados
+      } catch (err) {                                               // Em caso de falha da operação
+        setState((prev) => ({ ...prev, searchResults: [] }));       // Esvazia os resultados da lista de pesquisa
+      }
+    },
+    [model]                                                         // Dependência do Hook para garantir acesso ao Model
+  );
+
+  // Seleção direta de produto via busca no modal
+  const handleSelectProductToBuy = useCallback(
+    async (item: ProductSearchResult): Promise<boolean> => {
+      try {
+        await dispatch({                                                                // Envia a intenção create o do produto com quantidade padrão igual a 1
+          type: 'CREATE',                                                               // Identificação do tipo da intenção
+          payload: { id_product: item.id_product, qt_product: 1 },                      // Envia o campos para do registro
+        });
+        return await new Promise<boolean>((addAnother) => {                             // Aguarda retorno para adicionar outro produto
+          Alert.alert(                                                                  // Exibe alerta de confirmação nativo
+            'Sucesso',                                                                  // Título do alerta de confirmação
+            `${item.nm_product} adicionado à lista!\nDeseja adicionar outro produto?`,  // Mensagem contendo o nome do item selecionado
+            [                                                                           // Array de botões de ação do alerta
+              { text: 'Não',                                                            // Opção para encerrar a operação
+                style: 'cancel',                                                        // Estilo do botão
+                onPress: () => {                                                        // Ação executada ao clicar no botão 
+                  resetForm();                                                          // Limpa os dados do formulário
+                  setModalSearchText('');                                               // Limpa o texto do campo de busca no modal
+                  setState((prev) => ({ ...prev, searchResults: [] }));                 // Esvazia os resultados da lista de pesquisa
+                  addAnother(false);                                                    // Retonar adicionar outro produto com NÃO (False)
+                },
+              },
+              { text: 'Sim',                                                            // Opção para continuar a operação outro produto
+                onPress: () => {                                                        // Ação executada ao clicar no botão 
+                  setModalSearchText('');                                               // Limpa o texto digitado para o próximo item
+                  setState((prev) => ({ ...prev, searchResults: [] }));                 // Esvazia a lista de busca atual
+                  addAnother(true);                                                     // Retonar adicionar outro produto com SIM (True)
+                },
+              },
+            ]
+          );
+        });
+      } catch (error: any) {                                                            // Em caso de falha da operação
+        Alert.alert(                                                                    // Exibe alerta de confirmação nativo
+          'Erro',                                                                       // Título do alerta exibido em caso de falha
+          error?.message || 'Não foi possível adicionar o produto.'                     // Exibe messagem extraída do erro capturado
+        );
+        return true;                                                                    // Mantem o modal de pesquisa aberto
+      }
+    },
+    [dispatch, resetForm]                                                               // Dependências do hook para garantir a atualização da função
+  );
+
+  // Carregamento inicial ao montar o hook
+  useEffect(() => {
+    dispatch({ type: 'LOAD' }).catch(() => {}); // Executa a busca inicial e trata exceções
+  }, [dispatch]);                               // Garante reexecução caso dispatch seja alterado
+
+   // Função para filtrar a lista de registros cadastrados
   const filteredItems = state.items.filter(item => {
-    const searchLower = searchText.toLowerCase();
+    // Converte o texto digitado para minúsculas e remove espaços
+    const searchLower = searchText.toLowerCase().trim(); 
+    // Retorna todos os itens se o campo de busca estiver vazio
+    if (!searchLower) return true;
+    // Verifica se o nome do produto contém o texto pesquisado
     const matchName = item.nm_product.toLowerCase().includes(searchLower);
+    // Verifica se o grupo do produto contém o texto pesquisado (se o grupo existir)
     const matchGroup = item.nm_group ? item.nm_group.toLowerCase().includes(searchLower) : false;
+    // Retorna verdadeiro se houver correspondência no nome ou no grupo
     return matchName || matchGroup;
   });
-  
-  // Preenche os campos do formulário para o modo de edição de quantidade
-  const startEditing = useCallback((item: {
-    id_list_buy: number;
-    id_product: number;
-    nm_product: string;
-    qt_product: number;
-  }) => {
-    setEditingQuantityItem({
-      id_list_buy: item.id_list_buy,
-      id_product: item.id_product,
-      nm_product: item.nm_product,
-      qt_product: item.qt_product,
-    });
-    setNewQuantityText(String(item.qt_product));
-  }, []);
 
-  // Retorna o estado atual e a função de despacho para consumo direto na tela (View)
+  // Função de edição para preencher campos do formulário
+  const startEditing = (id: number, quantity: number) => {
+    setEditingId(id);               // Salva o ID do item
+    setQuantity(String(quantity));  // Preenche a quantidade no campo
+  };
+
   return {
-    state,
-    form,
-    dispatch,
-    filteredItems,
-    searchProductsByName,
-    handleScanSuccess,
-    handleSelectProductToBuy,
-    handleSaveQuantity,
-    startEditing,
-    resetForm,
+state: {
+      ...state, // Copia o estado original
+      items: filteredItems, // Subtitui a lista de itens pela lista filtrada
+    },
+    form: {
+      productId,                      // ID do produto digitado
+      setProductId,                   // Função para alterar o ID do produto
+      quantity,                       // Quantidade digitada
+      setQuantity,                    // Função para alterar a quantidade
+      searchText,                     // Texto de busca da lista principal
+      setSearchText,                  // Função para alterar o texto de busca principal
+      modalSearchText,                // Texto de busca do modal
+      setModalSearchText,             // Função para alterar o texto de busca do modal
+      selectedProductId,              // Produto selecionado no modal
+      setSelectedProductId,           // Função para alterar o produto selecionado
+      isEditing: editingId !== null,  // Booleano indicando se está editando
+      editingId,                      // ID do item em edição
+      resetForm,                      // Função para limpar os campos
+      startEditing,                   // Função para iniciar a edição de um item
+    },
+    handleSaveData,                   // Função para salvar/atualizar item
+    handleDeleteData,                 // Função para remover item da lista
+    handleClearList,                  // Função para limpar toda a lista
+    handleSearchProductByName,        // Função para buscar produtos por nome
+    handleSelectProductToBuy,         // Função para selecionar o produto encontrado
+    handleScanSuccess,                // Função para processar a leitura do código de barras
+    dispatch,                         // Disparador de ações do reducer
   };
 }

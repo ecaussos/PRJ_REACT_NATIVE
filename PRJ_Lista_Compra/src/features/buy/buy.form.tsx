@@ -1,60 +1,200 @@
 // src/features/buy/buy.form.tsx
-import { useState } from 'react';
-import { ActivityIndicator, Button, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ProductEntity } from '../../data/entities/product.entity';
-import { styles } from './buy.styles';
+import React, { useState } from 'react';
 import {
-  BuyActionsProps,
-  BuyAddOptionsProps,
-  BuyItemModalProps,
-  BuyNameSearchModalProps,
-  FinishBuyModalProps,
-} from './buy.types';
+  FlatList,
+  Modal,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { ProductEntity } from '../../data/entities/product.entity';
+import { SupplierEntity } from '../../data/entities/supplier.entity';
+import { BuyListCameraModal } from '../buyList/buyList.form';
+import { styles } from './buy.styles';
+import { BuyCartItem, BuyFormProps, SearchProductResult } from './buy.types';
 
-// COMPONENTE DE BOTÕES DE AÇÃO - Lista/Produto
-// Componente do formulário para Listar e Adicionar os registros[cite: 3]
-export function BuyActions({ onOpenBuyList, onToggleAddOptions }: BuyActionsProps) {
-  // MONTAGEM DA TELA[cite: 3]
+// Botões de ações principais - Produto Com/Sem Lista
+export function BuyActions({
+  onOpenBuyList,
+  onToggleAddOptions,
+}: {
+  onOpenBuyList: () => void;
+  onToggleAddOptions: () => void;
+}) {
+  // MONTAGEM DA TELA
   return (
     <View style={styles.sectionContainer}>
-      <Text style={styles.sectionTitle}>Selecione a opção</Text>
+      <Text style={styles.sectionTitle}>Ações Principais</Text>
       <View style={styles.buttonsRow}>
-        {/* Bõtao para listar registros */}
         <TouchableOpacity style={styles.actionButtonList} onPress={onOpenBuyList}>
-          <Text style={styles.buttonText}>📋 Utilizar Lista</Text>
+          <Text style={styles.buttonText}>Carregar Lista</Text>
         </TouchableOpacity>
-        {/* Bõtao para Adcionar registros */}
         <TouchableOpacity style={styles.actionButtonAdd} onPress={onToggleAddOptions}>
-          <Text style={styles.buttonText}>🧺 Adicionar Produto</Text>
+          <Text style={styles.buttonText}>+ Adicionar Item</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// COMPONENTE DE BOTÕES DE AÇÃO - Câmera/Nome
-// Função para mostrar os botões adicionar registro[cite: 3]
-export function BuyAddActions({ onOpenCamera, onOpenNameSearch }: BuyAddOptionsProps) {
-  // MONTAGEM DA TELA[cite: 3]
+// Botão de ação adicionar produto sem lista
+export function BuyAddActions({
+  onOpenCamera,
+  onOpenNameSearch,
+}: {
+  onOpenCamera: () => void;
+  onOpenNameSearch: () => void;
+}) {
+  // MONTAGEM DA TELA
   return (
     <View style={styles.sectionContainer}>
-      <Text style={styles.sectionTitle}>Adicionar Produto</Text>
+      <Text style={styles.sectionTitle}>Modo de Adição</Text>
       <View style={styles.buttonsRow}>
-        {/* Bõtao para Adcionar registros - câmera */}
         <TouchableOpacity style={styles.actionButtonCamera} onPress={onOpenCamera}>
-          <Text style={styles.buttonText}>📷 Código</Text>
+          <Text style={styles.buttonText}>📷 Câmera</Text>
         </TouchableOpacity>
-        {/* Bõtao para Adcionar registros - nome */}
         <TouchableOpacity style={styles.actionButtonName} onPress={onOpenNameSearch}>
-          <Text style={styles.buttonText}>🔍 Nome</Text>
+          <Text style={styles.buttonText}>🔍 Buscar Nome</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// COMPONENTE EDIÇÃO DE REGISTROS - Produto/Quantidade/Valor
-// Função para mostrar a edição do registro[cite: 3]
+// Apresenta lista dos itens da compra e botões de ação
+export function BuyCartItemCard({
+  item,
+  onEdit,
+  onRemove,
+}: {
+  item: BuyCartItem;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const unitValue = item.vl_product ?? 0;
+  const quantity = item.qt_product || 1;
+  const hasValue = item.vl_product !== undefined && item.vl_product !== null;
+  const subtotal = quantity * unitValue;
+  
+  // MONTAGEM DA TELA
+  return (
+    <View style={styles.itemCard}>
+      <View style={styles.itemInfo}>
+        <View>
+          <Text style={styles.ItemList}>{item.nm_product}</Text>
+          {item.nm_group ? <Text style={styles.details}>{item.nm_group}</Text> : null}
+          <Text style={styles.quantity}>Qtd: {quantity}</Text>
+        </View>
+
+        <View style={styles.buttonsRow}>
+          <TouchableOpacity
+            style={[styles.iconButton, styles.editButton]}
+            onPress={onEdit}
+            accessibilityLabel="Editar item"
+          >
+            <Text style={styles.buttonText}>✏️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconButton, styles.deleteButton]}
+            onPress={onRemove}
+            accessibilityLabel="Remover item"
+          >
+            <Text style={styles.buttonText}>🗑️</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Text style={styles.details}>
+        Unit: {hasValue ? `R$ ${unitValue.toFixed(2)}` : 'Não informado'} | Subtotal: {hasValue ? `R$ ${subtotal.toFixed(2)}` : 'R$ 0.00'}
+      </Text>
+    </View>
+  );
+}
+
+// Apresenta o valor total dos registros na lista - Verifica se a lista tem registro
+export function BuyFooterTotal({
+  totalValue,
+  onFinalize,
+}: {
+  totalValue: number;
+  onFinalize: () => void;
+}) {
+  // MONTAGEM DA TELA
+  return (
+    <View style={styles.footer}>
+      <Text style={styles.title}>Total: R$ {totalValue.toFixed(2)}</Text>
+      <TouchableOpacity style={styles.actionButtonAdd} onPress={onFinalize}>
+        <Text style={styles.buttonText}>Finalizar Compra</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Modal de ação adicionar produto por nome
+export function BuyNameSearchModal({
+  visible,
+  onClose,
+  onSearchProducts,
+  onSelectProduct,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSearchProducts: (query: string) => Promise<SearchProductResult[]>;
+  onSelectProduct: (product: ProductEntity | SearchProductResult) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchProductResult[]>([]);
+
+  const handleSearch = async (text: string) => {
+    setQuery(text);
+    if (text.trim().length > 1) {
+      const data = await onSearchProducts(text);
+      setResults(data);
+    } else {
+      setResults([]);
+    }
+  };
+
+  const handleSelect = (product: SearchProductResult) => {
+    onSelectProduct(product);
+    setQuery('');
+    setResults([]);
+    onClose();
+  };
+
+  // MONTAGEM DA TELA
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Buscar Produto</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Digite o nome..."
+          value={query}
+          onChangeText={handleSearch}
+          autoFocus
+        />
+        <FlatList
+          data={results}
+          keyExtractor={item => String(item.id_product)}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.modalOptionButton}
+              onPress={() => handleSelect(item)}
+            >
+              <Text style={styles.modalOptionText}>{item.nm_product}</Text>
+            </TouchableOpacity>
+          )}
+        />
+        <TouchableOpacity style={styles.actionButtonList} onPress={onClose}>
+          <Text style={styles.buttonText}>Cancelar</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
 export function BuyItemModal({
   visible,
   item,
@@ -64,42 +204,50 @@ export function BuyItemModal({
   onChangeValue,
   onSave,
   onClose,
-}: BuyItemModalProps) {
-  // MONTAGEM DA TELA[cite: 3]
+}: {
+  visible: boolean;
+  item: BuyCartItem | null;
+  quantityText: string;
+  valueText: string;
+  onChangeQuantity: (text: string) => void;
+  onChangeValue: (text: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  if (!item) return null;
+
+  // MONTAGEM DA TELA
   return (
-    <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Informar Dados do Item</Text>
-          {/* Apresenta o registros */}
-          <Text style={{ textAlign: 'center', marginBottom: 15, fontWeight: 'bold', color: '#333' }}>
-            {item?.nm_product}
-          </Text>
-          {/* Caixa de texto para alterar o registro */}
+          <Text style={styles.modalTitle}>Editar Item</Text>
+          <Text style={styles.subtitle}>{item.nm_product}</Text>
+
           <Text style={styles.label}>Quantidade:</Text>
           <TextInput
             style={styles.input}
             keyboardType="numeric"
             value={quantityText}
             onChangeText={onChangeQuantity}
-            placeholder="Quantidade"
           />
-          {/* Caixa de texto para alterar o registro */}
+
           <Text style={styles.label}>Valor Unitário (R$):</Text>
           <TextInput
             style={styles.input}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
+            placeholder="0.00"
             value={valueText}
             onChangeText={onChangeValue}
-            placeholder="0.00"
-            autoFocus
           />
-          {/* Botões de ação */}
+
           <View style={styles.modalButtonsContainer}>
-            {/* Botão salva registro */}
-            <Button title="Salvar" onPress={onSave} />
-            {/* Botão cancela operação registro */}
-            <Button title="Cancelar" color="#6c757d" onPress={onClose} />
+            <TouchableOpacity style={styles.actionButtonAdd} onPress={onSave}>
+              <Text style={styles.buttonText}>Salvar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButtonList} onPress={onClose}>
+              <Text style={styles.buttonText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -107,144 +255,101 @@ export function BuyItemModal({
   );
 }
 
-// COMPONENTE DE FINALIZA - Compra/Fornecedor
-// Função para mostrar a edição do registro[cite: 3]
-export function FinishBuyModal({ visible, suppliers, onSelectSupplier, onClose }: FinishBuyModalProps) {
-  // MONTAGEM DA TELA[cite: 3]
+export function FinishBuyModal({
+  visible,
+  suppliers,
+  onSelectSupplier,
+  onClose,
+}: {
+  visible: boolean;
+  suppliers: SupplierEntity[];
+  onSelectSupplier: (supplier: SupplierEntity) => void;
+  onClose: () => void;
+}) {
   return (
-    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { maxHeight: '70%' }]}>
-          <Text style={styles.modalTitle}>Selecione o Fornecedor</Text>
-          {/* Container dos registros*/}
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Selecione o Mercado</Text>
           <FlatList
             data={suppliers}
             keyExtractor={item => String(item.id_supplier)}
             renderItem={({ item }) => (
-              // Defini o item como um botão
               <TouchableOpacity
-                style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: '#eee' }}
+                style={styles.modalOptionButton}
                 onPress={() => onSelectSupplier(item)}
               >
-                {/* Apresentar os dados do registro */}
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#222' }}>{item.nm_supplier}</Text>
+                <Text style={styles.modalOptionText}>{item.nm_supplier}</Text>
               </TouchableOpacity>
             )}
-            // Apresentar mensagem se não encontrar nenhum registro
-            ListEmptyComponent={
-              <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>
-                Nenhum fornecedor cadastrado.
-              </Text>
-            }
           />
-          {/* Botões de ação */}
-          <View style={{ marginTop: 15 }}>
-            {/* Botão cancela operação registro */}
-            <Button title="Cancelar" color="#FF3B30" onPress={onClose} />
-          </View>
+          <TouchableOpacity style={styles.actionButtonList} onPress={onClose}>
+            <Text style={styles.buttonText}>Cancelar</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 }
 
-// COMPONENTE BUSCA REGISTRO POR NOME
-// Função para mostrar a busca do registro[cite: 3]
-export function BuyNameSearchModal({
-  visible,
-  onSelectProduct,
-  onClose,
-  onSearchProducts,
-}: BuyNameSearchModalProps) {
-  const [query, setQuery] = useState(''); // Cria variável de estado[cite: 3]
-  const [results, setResults] = useState<Array<Pick<ProductEntity, 'id_product' | 'nm_product'>>>([]); // Cria variável de resultado para guardar registros[cite: 3]
-  const [loading, setLoading] = useState(false); // Cria variável de carregamento de tela[cite: 3]
-
-  // Função assicrona para receber texto digitado[cite: 3]
-  const handleSearch = async (text: string) => {
-    // Atualiza com o texto digitado[cite: 3]
-    setQuery(text);
-    // Se texto digitado menor que 2[cite: 3]
-    if (text.trim().length < 2) {
-      // Limpa a tela de resultado[cite: 3]
-      setResults([]);
-      return;
-    }
-    // Ativa: Indicador visual de carregamento (Spinner)[cite: 3]
-    setLoading(true);
-    // Bloco tratamento: Try: Tente | Cach: Capture (Erro)[cite: 3]
-    try {
-      const data = await onSearchProducts(text);
-      setResults(data);
-      // Se ocorrer algum erro[cite: 3]
-    } catch (error) {
-      // Gera alerta informativo[cite: 3]
-      console.error('Erro na busca de produtos:', error);
-      // Se der erro ou não[cite: 3]
-    } finally {
-      // Desativa: Indicador visual de carregamento (Spinner)[cite: 3]
-      setLoading(false);
-    }
-  };
-
-  // Função para limpar dos dodos recebidos e limpar e fehcar a tela[cite: 3]
-  const handleClose = () => {
-    setQuery('');
-    setResults([]);
-    onClose();
-  };
-
-  // MONTAGEM DA TELA[cite: 3]
+// MODAIS REUTILIZÁVEIS
+export function BuyForm({
+  // Modal Câmera
+  showCameraModal,                                   // Exibe o modal da câmera
+  onScanSuccess,                                     // Ação ao ler o código de barras
+  onCloseCameraModal,                                // Fecha o modal da câmera
+  // Modal Busca por Nome
+  showNameSearchModal,                               // Exibe o modal de busca por nome
+  onSearchProductsByName,                            // Executa a busca de produtos
+  onSelectProductToAdd,                              // Ação ao selecionar um produto
+  onCloseNameSearchModal,                            // Fecha o modal de busca por nome
+  // Modal Item / Edição
+  editingItem,                                       // Item sendo editado atualmente
+  qtyText,                                           // Texto da quantidade do item
+  valueText,                                         // Texto do preço do item
+  onChangeQtyText,                                   // Atualiza o texto da quantidade
+  onChangeValueText,                                 // Atualiza o texto do preço
+  onSaveItemData,                                    // Salva as edições do item
+  onCloseItemModal,                                  // Fecha o modal de edição
+  // Modal Finalizar
+  showSupplierModal,                                 // Exibe o modal de seleção de fornecedor
+  suppliers,                                         // Lista de fornecedores disponíveis
+  onConfirmFinalize,                                 // Confirma a finalização com o fornecedor
+  onCloseSupplierModal,                              // Fecha o modal de fornecedor
+}: BuyFormProps): React.JSX.Element {
   return (
-    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { maxHeight: '80%' }]}>
-          <Text style={styles.modalTitle}>Buscar Produto por Nome</Text>
-          {/* Caixa de texto para localizar o registro */}
-          <TextInput
-            style={styles.input}
-            placeholder="Digite o nome do produto..."
-            value={query}
-            onChangeText={handleSearch}
-            autoFocus
-          />
-          {/* Indicador visual de carregamento (Spinner) */}
-          {loading && <ActivityIndicator color="#007AFF" style={{ marginVertical: 10 }} />}
-          {/* Lista com os resultados encontrados no banco */}
-          <FlatList
-            data={results}
-            keyExtractor={(item, index) => String(item.id_product || index)}
-            renderItem={({ item }) => (
-              // Defini o item como um botão
-              <TouchableOpacity
-                style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: '#eee' }}
-                onPress={() => {
-                  onSelectProduct(item);
-                  handleClose();
-                }}
-              >
-                {/* Apresentar os dados do registro */}
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#222' }}>{item.nm_product}</Text>
-                {(item as any).nm_group && (
-                  <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{(item as any).nm_group}</Text>
-                )}
-              </TouchableOpacity>
-            )}
-            // Apresentar mensagem se não encontrar nenhum registro
-            ListEmptyComponent={
-              query.length >= 2 && !loading ? (
-                <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>
-                  Nenhum produto encontrado.
-                </Text>
-              ) : null
-            }
-          />
-          {/* Botão cancela operação */}
-          <View style={{ marginTop: 15 }}>
-            <Button title="Cancelar" color="#FF3B30" onPress={handleClose} />
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <>
+      {/* Modal Câmera */}
+      <BuyListCameraModal
+        visible={showModal}                   // Exibe o modal do leitor de código de barras
+        onScanSuccess={onScanSuccess}               // Processa a leitura do código de barras
+        onClose={onCloseCameraModal}                // Oculta o modal da câmera
+      />
+      {/* Modal Busca por Nome */}
+      <BuyNameSearchModal
+        visible={showNameSearchModal}               // Exibe o modal de busca de produto por nome
+        onClose={onCloseNameSearchModal}            // Oculta o modal de busca por nome
+        onSearchProducts={onSearchProductsByName}   // Busca produtos cadastrados no banco
+        onSelectProduct={onSelectProductToAdd}      // Adiciona o produto selecionado à lista
+      />
+      {/* Modal Item / Edição */}
+      <BuyItemModal
+        visible={editingItem !== null}              // Exibe o modal de edição quantidade e valor
+        item={editingItem?.item || null}            // Dados do item em edição (null se nenhum)
+        quantityText={qtyText}                      // Texto informado no campo de quantidade
+        valueText={valueText}                       // Texto informado no campo de preço
+        onChangeQuantity={onChangeQtyText}          // Atualiza o estado da quantidade
+        onChangeValue={onChangeValueText}           // Atualiza o estado do preço
+        onSave={onSaveItemData}                     // Salva as alterações feitas no item
+        onClose={onCloseItemModal}                  // Cancela e fecha a edição do item
+      />
+      {/* Modal Finalizar*/}
+      <FinishBuyModal
+        visible={showSupplierModal}                 // Exibe o modal de escolha do fornecedor
+        suppliers={suppliers}                       // Lista de fornecedores disponíveis
+        onSelectSupplier={onConfirmFinalize}        // Finaliza a compra vinculando o fornecedor
+        onClose={onCloseSupplierModal}              // Oculta o modal de fornecedores
+      />
+    </>
   );
 }

@@ -36,6 +36,18 @@ export const styles = StyleSheet.create({
     textAlign: 'center', 
     fontWeight: '600' 
   },
+  // Card branco que agrupa os elementos do formulário de cadastro e edição
+  formCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
   // Caixas de texto (Inputs)
   input: {
     backgroundColor: '#fff',
@@ -65,6 +77,16 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center' 
   },
+  // Container de texto com ajuste flex
+  textContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
+  // Container que organiza os botões de ícone (editar e excluir) lado a lado
+  actionButtonsContainer: { 
+    flexDirection: 'row', 
+    gap: 8 
+  },
   // Botões modernos em formato de ícone quadrado com sombra
   iconButton: {
     width: 38,
@@ -87,12 +109,18 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FF0000' 
   },
   // Nome principal do item na lista
-  ItemList: { 
+  itemList: { 
     fontSize: 16, 
     fontWeight: 'bold', 
     color: '#222' 
   },
-  // Detalhes secundários do item na lista
+  // Texto exibido na lista quando não há cadastrados
+  emptyText: { 
+    textAlign: 'center', 
+    color: '#888', 
+    marginTop: 20 
+  },
+  // Estilo do texto exibido na lista quando não há produtos cadastrados
   details: { 
     fontSize: 12, 
     color: '#666', 
@@ -104,12 +132,6 @@ export const styles = StyleSheet.create({
     color: '#007AFF',
     marginTop: 6,
     fontWeight: '600',
-  },
-  // Texto exibido na lista quando não há produtos cadastrados
-  emptyText: { 
-    textAlign: 'center', 
-    color: '#888', 
-    marginTop: 20 
   },
   // Rodapé com botão
   footer: {
@@ -156,7 +178,7 @@ export const styles = StyleSheet.create({
     gap: 8
   },
 
-  // CAIXA BOTÇÕES ADICIONAR PRODUTO -> CÓDIGO OU NOME
+  // BOTOÇÕES ADICIONAR PRODUTO
   // Caixa externa agrupadora dos botões com borda e efeito Fieldset
   sectionContainer: {
     borderWidth: 1,
@@ -168,6 +190,7 @@ export const styles = StyleSheet.create({
     position: 'relative',
     paddingTop: 18,
   },
+
   // Título flutuante posicionado na borda superior da caixa
   sectionTitle: {
     position: 'absolute',
@@ -179,26 +202,14 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: "#888",
   },
+
   // Linha interna que distribui os botões lado a lado com espaçamento
   buttonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 10,
   },
-  actionButtonList: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  actionButtonAdd: {
-    flex: 1,
-    backgroundColor: '#34C759',
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
+
   // Estilo do botão de leitura por câmera (Código)
   actionButtonCamera: {
     flex: 1,
@@ -207,6 +218,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+
   // Estilo do botão de consulta por nome
   actionButtonName: {
     flex: 1,
@@ -215,17 +227,17 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  // Valor total
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
+
   // Estilo de texto padrão para os botões de ação rápida
   buttonText: {
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 14,
   },
+  productName: { fontSize: 16, fontWeight: 'bold', color: '#222', flex: 1 },
+  price: { fontSize: 16, fontWeight: 'bold', color: '#34C759' },
+  date: { fontSize: 11, color: '#888', marginTop: 6, textAlign: 'right' },
+
+
+
 });

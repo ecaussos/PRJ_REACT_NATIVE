@@ -1,188 +1,186 @@
 // src/features/product/product.hook.ts
 import { useCallback, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { ProductModel, ProductModelInstance } from './product.model';
 import { ProductIntent, ProductState } from './product.types';
 
 export function useProductViewModel(model: ProductModel = ProductModelInstance) {
-  // Estado centralizado gerenciado pelo padrão MVI
+  // Estado centralizado de carregamento, erros e lista
   const [state, setState] = useState<ProductState>({
-    products: [],
-    groups: [],
-    loading: false,
-    error: null,
+    products: [],                                                                 // Lista inicial de registros cadastrados (vazia)
+    groups: [],                                                                   // Lista inicial de grupos cadastrados (vazia)
+    loading: false,                                                               // Flag para controle de spinner/loading durante requisições
+    error: null,                                                                  // Mensagem de erro capturada nas operações (null)
   });
 
-  // Estados locais de UI (formulários, modais e filtros)
-  const [name, setName] = useState('');
-  const [barcode, setBarcode] = useState('');
-  const [groupId, setGroupId] = useState('');
-  const [searchText, setSearchText] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Estados locais para controle de formulário, campo de busca e edição
+  const [name, setName] = useState('');                                           // Armazena o valor digitado no campo de nome
+  const [barcode, setBarcode] = useState('');                                     // Armazena o valor digitado no campo de código de barras
+  const [groupId, setGroupId] = useState('');                                     // Armazena o valor digitado no campo de grupo
+  const [searchText, setSearchText] = useState('');                               // Armazena o termo para filtragem na listagem
+  const [editingId, setEditingId] = useState<number | null>(null);                // Armazena o ID do registro em edição (null indica novo cadastro)
 
-  // Reseta o formulário
+  // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
-    setName('');
-    setBarcode('');
-    setGroupId('');
-    setEditingId(null);
+    setName('');                                                                  // Limpa o texto do campo de nome
+    setBarcode('');                                                               // Limpa o texto do campo de código de barras
+    setGroupId('');                                                               // Limpa o texto do campo de grupo
+    setEditingId(null);                                                           // Limpa o ID, voltando o formulário para modo de criação
   }, []);
 
-  // Dispatch: Processador de intenções da interface (Intents) - MVI
+  // Processador de intenções da interface (MVI)
   const dispatch = useCallback(async (intent: ProductIntent) => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
+    // Ativa o estado de carregamento e reseta mensagens de erro anteriores
+    setState(prev => ({ ...prev, loading: true, error: null }));                   // Atualiza estado inicial da requisição
     try {
-      switch (intent.type) {
-        case 'LOAD': {
-          // Busca produtos e grupos em paralelo para otimizar tempo de execução
-          const [productsData, groupsData] = await Promise.all([
-            model.fetchAll(),
-            model.getGroups(),
+      switch (intent.type) {                                                      // Avalia o tipo de intenção solicitada
+        case 'LOAD': {                                                            // Se a intenção for igual a LOAD
+          const [productsData, groupsData] = await Promise.all([                  // Executa as buscas de produtos e grupos simultaneamente
+            model.fetchAll(),                                                     // Busca a lista completa de produtos
+            model.fetchGroupOptions()                                             // Busca as opções de grupos disponíveis
           ]);
-          // Atualiza os estados
-          setState(prev => ({ 
-            ...prev, 
-            products: productsData, 
-            groups: groupsData, 
-            loading: false 
+          setState(prev => ({                                                     // Atualiza o estado centralizado com os dados carregados
+            ...prev,                                                              // Mantém os valores de estado anteriores
+            products: productsData,                                               // Altera o estado e vincula os produtos obtidos
+            groups: groupsData,                                                   // Altera o estado e vincula os grupos obtidos
+            loading: false                                                        // Desativa o indicador de carregamento
           }));
-          break;
+          break;                                                                  // Finaliza a execução do caso LOAD
         }
 
-        case 'CREATE': {
-          // Executa a criação do registro
-          await model.create(intent.payload);
-          // Limpa formulário
-          resetForm();
-          // Atualiza a lista e dados em memória
-          const [productsData, groupsData] = await Promise.all([
-            model.fetchAll(),
-            model.getGroups(),
-          ]);
-          // Atualiza os estados 
-          setState(prev => ({
-            ...prev,
-            products: productsData,
-            groups: groupsData,
-            loading: false,
-          }));
-          break;
+        case 'CREATE': {                                                          // Se a intenção for igual a CREATE
+          await model.create(                                                     // Envia a intenção de criar com os campos informados
+            intent.payload.nm_product,                                            // Nome do produto a ser cadastrado
+            intent.payload.cd_product_gtin,                                       // Código de barras GTIN
+            intent.payload.id_group,                                              // ID do grupo associado
+          );
+          resetForm();                                                            // Limpa os campos do formulário
+          const data = await model.fetchAll();                                    // Rebusca todos os registros atualizados
+          setState(prev => ({ ...prev, products: data, loading: false }));        // Atualiza a lista de produtos e remove o indicador de loading
+          break;                                                                  // Finaliza a execução do caso CREATE
         }
 
-        case 'UPDATE': {
-          // Executa a atualização do registro
-          await model.update(intent.payload.id_product, {
-            nm_product: intent.payload.nm_product,
-            id_group: intent.payload.id_group,
-            cd_product_gtin: intent.payload.cd_product_gtin,
+        case 'UPDATE': {                                                          // Se a intenção for igual a UPDATE
+          await model.update(intent.payload.id_product, {                         // Envia a intenção de atualização do registro pelo ID
+            nm_product: intent.payload.nm_product,                                // Nome atualizado do produto
+            cd_product_gtin: intent.payload.cd_product_gtin,                      // Código de barras atualizado
+            id_group: intent.payload.id_group,                                    // ID do grupo atualizado
           });
-          // Limpa formulário
-          resetForm();
-          // Atualiza a lista e dados em memória
-          const [productsData, groupsData] = await Promise.all([
-            model.fetchAll(),
-            model.getGroups(),
-          ]);
-          // Atualiza os estados
-          setState(prev => ({
-            ...prev,
-            products: productsData,
-            groups: groupsData,
-            loading: false,
-          }));
-          break;
+          resetForm();                                                            // Limpa os campos do formulário
+          const data = await model.fetchAll();                                    // Rebusca todos os registros atualizados
+          setState(prev => ({ ...prev, products: data, loading: false }));        // Atualiza a lista de produtos e remove o indicador de loading
+          break;                                                                  // Finaliza a execução do caso UPDATE
         }
 
-        case 'DELETE': {
-          // Executa a exclusão do registro
-          await model.delete(intent.payload);
-          // Atualiza a lista e dados em memória
-          const [productsData, groupsData] = await Promise.all([
-            model.fetchAll(),
-            model.getGroups(),
-          ]);
-          // Atualiza os estados
-          setState(prev => ({
-            ...prev,
-            products: productsData,
-            groups: groupsData,
-            loading: false,
-          }));
-          break;
+        case 'DELETE': {                                                          // Se a intenção for igual a DELETE
+          await model.delete(intent.payload);                                     // Executa a exclusão do registro pelo ID
+          const data = await model.fetchAll();                                    // Rebusca a lista atualizada de registros
+          setState(prev => ({ ...prev, products: data, loading: false }));        // Atualiza a lista e encerra o carregamento
+          break;                                                                  // Finaliza a execução do caso DELETE
         }
       }
     } catch (err) {
       // Captura e formata erros lançados pela Model ou pelo Repositório
-      const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro inesperado.';
-      // Atualiza os estados
-      setState(prev => ({ 
-        ...prev,
-        error: errorMessage, 
-        loading: false, 
-      }));
-      // Lança a exceção para o screen
+      const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro na operação.';
+      // Mantém os estados anteriores e registra a mensagem de falha
+      setState(prev => ({ ...prev, error: errorMessage, loading: false }));
+      // Lança a exceção para o componente chamador
       throw err;
     }
+  // Recria a função caso o model ou resetForm mudem
   }, [model, resetForm]);
 
-  // Ação de salvamento encapsulada no Hook (orquestra Model + Dispatch)
-  const saveProduct = async (): Promise<string> => {
-    // 1. Validação delegada ao Model
-    if (!ProductModel.isValid(name, barcode, groupId)) {
-      throw new Error('Preencha o nome e selecione um grupo!');
+  // Função para salvar, validar e gerar mensagem correspondente às ações
+  const handleSaveData = async (): Promise<boolean> => {                          // Função assíncrona que retorna boolean de confirmação
+    if (!ProductModel.isValid(name, barcode, groupId)) {                          // Executa validações de dados obrigatórios
+      Alert.alert('Aviso', 'Preencha os compos para o registro!');                // Alerta o usuário em caso de dados inválidos
+      return false;                                                               // Interrompe a execução e retorna falso
     }
-
-    const isEditing = editingId !== null;
-    // 2. Construção do payload/action delegada ao Model
-    const action = ProductModel.buildSaveAction(name, groupId, barcode, isEditing, editingId);
-
-    // 3. Despacha a intenção
-    await dispatch(action);
-
-    // 4. Retorna a mensagem correspondente
-    return isEditing ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!';
+    const isEditing = editingId !== null;                                         // Avalia se está em modo de edição (true) ou criação (false)
+    const action = ProductModel.buildSaveAction(                                  // Monta o objeto de intenção para gravação
+      name, barcode, groupId, isEditing, editingId                                // Passa os valores digitados no formulário
+    );
+    try {
+      await dispatch(action);                                                     // Envia a ação MVI para processamento
+      const successMessage = isEditing                                            // Define a mensagem dinâmica com base na operação
+        ? 'Registro atualizado com sucesso!'                                      // Exibe mensagem para atualização
+        : 'Registro cadastrado com sucesso!';                                     // Exibe mensagem para novo cadastro
+      Alert.alert('Sucesso', successMessage);                                     // Exibe caixa de diálogo confirmando o sucesso
+      return true;                                                                // Retorna verdadeiro sinalizando conclusão com sucesso
+    } catch (err: any) {
+      Alert.alert('Aviso', err.message || 'Erro ao salvar o registro.');          // Exibe mensagem caso a operação falhe
+      return false;                                                               // Retorna falso sinalizando falha na gravação
+    }
   };
 
-  // Executa o carregamento inicial dos dados assim que o hook é montado na tela
-  useEffect(() => {
-    dispatch({ type: 'LOAD' }).catch(() => {});
-  }, [dispatch]);
+  // Função para apresentar o modal de confirmação de exclusão
+  const handleDeleteData = (id: number, name: string) => {                        // Recebe ID e nome do item para exibição na mensagem
+    Alert.alert(                                                                  // Exibe alerta de confirmação nativo
+      'Excluir',                                                                  // Título da caixa de diálogo
+      `Deseja realmente excluir o registro "${name}"?`,                           // Mensagem de confirmação com o nome do item
+      [
+        { text: 'Cancelar', style: 'cancel' },                                    // Botão para cancelar a operação
+        {
+          text: 'Excluir',                                                        // Opção para confirmar a exclusão
+          style: 'destructive',                                                   // Estilo visual de alerta no iOS
+          onPress: async () => {                                                  // Ação executada ao confirmar exclusão
+            try {
+              await dispatch({ type: 'DELETE', payload: id });                    // Envia a intenção MVI de exclusão passando o ID
+              Alert.alert('Sucesso', `Registro ${name} excluído com sucesso!`);   // Exibe confirmação após apagar o registro
+            } catch (err: any) {
+              Alert.alert('Erro', err.message || 'Erro ao excluir o produto.');   // Exibe mensagem caso a operação falhe
+            }
+          },
+        },
+      ]
+    );
+  };
 
-  // Filtra a lista em tempo real com base no texto pesquisado
-  const filteredProducts = state.products.filter(item => 
-    item.nm_product.toLowerCase().includes(searchText.toLowerCase()) ||
-    (item.cd_product_gtin && item.cd_product_gtin.includes(searchText))
+  // Carregamento inicial ao montar o hook
+  useEffect(() => {
+    dispatch({ type: 'LOAD' }).catch(() => {});                                   // Executa a busca inicial e trata exceções
+  }, [dispatch]);                                                                 // Garante reexecução caso dispatch seja alterado
+
+  // Função para filtrar a lista de registros cadastrados
+  const filteredList = state.products.filter(data =>                              // Aplica o filtro sobre a lista original
+    data.nm_product.toLowerCase().includes(searchText.toLowerCase()) ||           // Compara o nome do produto com o texto buscado
+    (data.cd_product_gtin && data.cd_product_gtin.includes(searchText))           // Compara o código de barras com o texto buscado
   );
 
-  // Preenche os campos do formulário para o modo de edição
+  // Função para preencher os campos e ativar o modo de edição
   const startEditing = (
-    id: number, 
-    currentName: string, 
-    currentBarcode: string, 
-    currentGroupId: string
+    id: number,                                                                   // ID do registro selecionado
+    name: string,                                                                 // Nome do produto selecionado
+    barcode: string,                                                              // Código de barras selecionado
+    groupId: string                                                               // ID do grupo selecionado
   ) => {
-    setEditingId(id);
-    setName(currentName);
-    setBarcode(currentBarcode);
-    setGroupId(currentGroupId);
+    setEditingId(id);                                                             // Define o ID em edição
+    setName(name);                                                                // Preenche o campo de texto do nome
+    setBarcode(barcode);                                                          // Preenche o campo de texto do código de barras
+    setGroupId(groupId);                                                          // Preenche o grupo selecionado
   };
 
-  // Retorna o estado atual e a função de despacho para consumo direto na tela (View)
   return {
     state: {
-      ...state,
-      products: filteredProducts,
+      ...state,                                                                   // Propaga o estado base (loading, error, groups)
+      products: filteredList,                                                     // Substitui a lista completa pela lista filtrada
     },
     form: {
-      name, setName,
-      barcode, setBarcode,
-      groupId, setGroupId,
-      searchText, setSearchText,
-      isEditing: editingId !== null,
-      editingId,
-      resetForm,
-      startEditing,
+      name,                                                                       // Valor atual do campo nome
+      setName,                                                                    // Setter para o campo nome
+      barcode,                                                                    // Valor atual do campo código de barras
+      setBarcode,                                                                 // Setter para o campo código de barras
+      groupId,                                                                    // Valor atual do campo grupo
+      setGroupId,                                                                 // Setter para o campo grupo
+      searchText,                                                                 // Valor digitado na busca
+      setSearchText,                                                              // Setter para o termo de busca
+      isEditing: editingId !== null,                                              // Booleano informando se está editando
+      editingId,                                                                  // ID do registro em edição ou null
+      resetForm,                                                                  // Função de reset do formulário
+      startEditing,                                                               // Função de inicialização de edição
     },
-    saveProduct,
-    dispatch,
+    handleSaveData,                                                               // Handler de salvamento/atualização
+    handleDeleteData,                                                             // Handler de deleção
+    dispatch,                                                                     // Despachante de intenções MVI
   };
 }

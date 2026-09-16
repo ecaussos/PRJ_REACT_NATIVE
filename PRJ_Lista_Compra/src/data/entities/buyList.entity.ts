@@ -17,8 +17,6 @@ export type UpdateBuyListDTO = Partial<Omit<BuyListEntity, 'id_list_buy'>>;
 // 4. Interface expandida para exibição de itens da lista com JOINs (Produto e Grupo)
 export interface BuyListItemWithProductEntity extends BuyListEntity {
   nm_product: string;
-  cd_product_gtin: string | null;
-  id_group: number;
   nm_group?: string;
 }
 
