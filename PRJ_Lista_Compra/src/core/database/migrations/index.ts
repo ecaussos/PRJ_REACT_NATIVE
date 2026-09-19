@@ -1,3 +1,4 @@
+import { up as v10 } from './v10_buy';
 import { up as v1 } from './v1_supplier';
 import { up as v2 } from './v2_group_product';
 import { up as v3 } from './v3_product';
@@ -22,5 +23,6 @@ export async function runMigrations(db: any) {
   await v7(db);
   await v8(db);
   await v9(db);
+  await v10(db);
   console.log('Migrações do SQLite executadas com sucesso!');
 }

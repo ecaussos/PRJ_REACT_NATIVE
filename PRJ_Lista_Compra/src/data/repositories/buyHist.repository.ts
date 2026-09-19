@@ -1,6 +1,6 @@
 // src/data/repositories/buyHistRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { BuyHistWithDetailsEntity, CreateBuyHistDTO } from '../entities/buyHistEntity';
+import { BuyHistWithDetailsEntity, CreateBuyHistDTO } from '../entities/buyHist.entity';
 
 export class BuyHistRepository {
 

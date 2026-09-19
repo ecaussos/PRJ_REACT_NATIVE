@@ -1,7 +1,7 @@
 // src/features/buyHist/buyHist.model.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { BuyHistEntity, BuyHistWithDetailsEntity } from '../../data/entities/buyHistEntity';
-import { BuyHistRepository } from '../../data/repositories/buyHistRepository';
+import { BuyHistEntity, BuyHistWithDetailsEntity } from '../../data/entities/buyHist.entity';
+import { BuyHistRepository } from '../../data/repositories/buyHist.repository';
 
 const repository = new BuyHistRepository();
 

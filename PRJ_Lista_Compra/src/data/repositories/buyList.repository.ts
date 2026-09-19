@@ -91,6 +91,20 @@ export class BuyListRepository implements IBuyListRepository {
     }
   }
 
+  async findByActiveBuy(): Promise<boolean> {
+    try {
+      const db = await getDBConnection();
+      // Utiliza o getFirstAsync para obter o resultado da agregação COUNT
+      const result = await db.getFirstAsync<{ total: number }>(
+        'SELECT COUNT(*) as total FROM buy'
+      );
+
+      return (result?.total ?? 0) > 0;
+    } catch (error: any) {
+      throw new Error(`Erro ao verificar compra ativa: ${error.message}`);
+    }
+  }
+
   // Adicionar um novo item à lista de compras usando o DTO
   async create(item: CreateBuyListDTO): Promise<void> {
     try {

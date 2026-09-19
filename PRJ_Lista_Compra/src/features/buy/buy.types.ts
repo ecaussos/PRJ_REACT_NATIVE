@@ -1,98 +1,96 @@
-// src/features/buy/buy.types.ts
-import { ProductEntity } from '../../data/entities/product.entity';
+// src/features/buyList/buyList.types.ts
+import { BuyEntity, BuyWithProductEntity } from '../../data/entities/buy.entity';
 import { SupplierEntity } from '../../data/entities/supplier.entity';
-import { SupplierModelInstance } from '../supplier/supplier.model';
 
-// Resultado resumido da busca contendo apenas ID e nome
-export type SearchProductResult = Pick<ProductEntity, 'id_product' | 'nm_product'>;
+// Re-exportação para facilidade de uso na camada de UI
+export type Buy = BuyEntity;
 
-// Interface do Item do Carrinho de Compras em memória
-export interface BuyCartItem {
-id_list_buy?: number;               // ID único da lista de compras (opcional)
+// Representa o item da lista de compras (com JOIN do produto)
+export type BuyItem = BuyWithProductEntity;
+
+// Reexporta a entidade SupplierEntity para consumo na UI sem conflito de declaração local
+export type { SupplierEntity };
+
+// DTO para retorno de buscas
+export interface ProductSearchResult {
   id_product: number;               // ID do produto
   nm_product: string;               // Nome do produto
   cd_product_gtin?: string | null;  // Código de barras GTIN/EAN (opcional)
-  id_group?: number;                // ID da categoria/grupo do produto (opcional)
-  nm_group?: string;                // Nome da categoria/grupo do produto (opcional)
-  qt_product: number;               // Quantidade do produto
-  vl_product?: number | null;       // Valor/preço do produto (opcional)
-  dt_list_buy?: string;             // Data de inclusão na lista (opcional)
+  nm_group?: string | null;         // Nome da categoria/grupo do produto (opcional)
 }
 
-// Contrato das Props consumidas pelo componente de formulário (BuyListForm.tsx)
-export interface BuyFormProps {
-  // Modal Câmera
-  showCameraModal: boolean;                                                 // Exibe o modal da câmera
-  onScanSuccess: (barcode: string) => void;                                 // Ação ao ler o código de barras
-  onCloseCameraModal: () => void;                                           // Fecha o modal da câmera
-  // Modal Busca por Nome
-  showNameSearchModal: boolean;                                               // Exibe o modal de busca por nome
-  onSearchProductsByName: (query: string) => Promise<SearchProductResult[]>;  // Executa a busca de produtos
-  onSelectProductToAdd: (product: any) => void;                               // Ação ao selecionar um produto
-  onCloseNameSearchModal: () => void;                                         // Fecha o modal de busca por nome
-  // Modal Item / Edição
-  editingItem: { item: BuyCartItem; index: number } | null;                   // Item sendo editado atualmente
-  qtyText: string;                                                            // Texto da quantidade do item
-  valueText: string;                                                          // Texto do preço do item
-  onChangeQtyText: (text: string) => void;                                    // Atualiza o texto da quantidade
-  onChangeValueText: (text: string) => void;                                  // Atualiza o texto do preço
-  onSaveItemData: () => void;                                                 // Salva as edições do item
-  onCloseItemModal: () => void;                                               // Fecha o modal de edição
-  // Modal Finalizar
-  showSupplierModal: boolean;                                                 // Exibe o modal de seleção de fornecedor
-  suppliers: Awaited<ReturnType<typeof SupplierModelInstance.fetchAll>>;      // Lista de fornecedores disponíveis
-  onConfirmFinalize: (supplier: any) => void;                                 // Confirma a finalização com o fornecedor
-  onCloseSupplierModal: () => void;                                           // Fecha o modal de fornecedor
+// -------- Interfaces de Componentes de UI (Props) - Utilizados pelo Form  -------- //
+
+// Props para as ações principais (Cadastrar, Filtrar e Limpar)
+export interface BuyActionsProps {
+  onOpenCreateModal: () => void; // Função executada para abrir o modal de novo cadastro
+  onOpenFilterModal: () => void; // Função executada para abrir o modal de filtragem na lista
+  onClearSearch: () => void;     // Função executada para limpar o filtro de busca aplicado
+  onClearBuy: () => void;        // Função executada para aciona a confirmação para exluir todos os registros da compra ()
+  hasActiveSearch: boolean;      // Indica se existe uma busca ativa no momento para alternar ícones ou botões
 }
 
-// Interface que encapsula o gerenciamento de dados do formulário e filtro no Hook (ViewModel)
-export interface BuyFormState {
-  // Estado e Despachante do Reducer
-  state: BuyState;                        // Estado global da tela de compras
-  dispatch: React.Dispatch<BuyIntent>;    // Função para disparar ações de negócio
-  // Filtro e Controle de Inputs
-  searchText: string;                       // Texto do campo de pesquisa de produtos
-  setSearchText: (text: string) => void;    // Atualiza o texto da pesquisa
-  qtyText: string;                          // Valor em texto da quantidade do item
-  setQtyText: (text: string) => void;       // Atualiza a quantidade do item
-  valueText: string;                        // Valor em texto do preço do item
-  setValueText: (text: string) => void;     // Atualiza o preço do item
-  // Propriedades Calculadas / Listas Filtradas
-  filteredItems: BuyCartItem[];   // Lista de produtos filtrados pela pesquisa
-  totalPurchaseValue: number;     // Valor total somado dos itens do carrinho
-  // Handlers(Monipuladores) e Métodos de Negócio
-  searchProductsByName: (query: string) => Promise<SearchProductResult[]>;          // Busca produtos no banco pelo nome
-  handleScanSuccess: (barcode: string) => void;                                     // Processa o código de barras lido
-  handleAddProductSelect: (product: ProductEntity | SearchProductResult) => void;   // Adiciona o produto selecionado à compra
-  handleStartEditItem: (item: BuyCartItem, index: number) => void;                  // Abre a edição de um item da lista
-  handleSaveItemData: () => void;                                                   // Salva as alterações de quantidade e valor
-  handleOpenFinishModal: () => void;                                                // Valida a compra e abre modal de finalização
-  handleConfirmFinalize: (supplier: SupplierEntity) => void;                        // Finaliza a compra salvando o histórico
-  // Controle dos Modais
-  setCameraModal: (show: boolean) => void;        // Controla exibição do modal da câmera
-  setNameSearchModal: (show: boolean) => void;    // Controla exibição do modal de busca por nome
-  setSupplierModal: (show: boolean) => void;      // Controla exibição do modal de fornecedores
-  toggleAddOptions: () => void;                   // Alterna a exibição das opções de adição sem lista
+// Props do Modal de filtragem seleção de item na lista (FlatList)
+export interface BuyFilterProps {
+  visible: boolean;                           // Controla se o modal de filtram está visível ou oculto
+  searchText: string;                         // Valor do campo de texto digitado para a filtragem
+  onChangeSearchText: (text: string) => void; // Função executada ao digitar o texto da filtragem
+  onClose: () => void;                        // Função executada o fechamento do model
+  onCancel: () => void;                       // Função executada ao cancelar - limpar/fecha modal
 }
 
-// Define o formato completo do estado gerenciado pelo ViewModel (Hook) da tela Lista de Compra
+// Props para a exibição de cada item da Lista de registros cadastrados
+export interface BuyItemProps {
+  item: BuyWithProductEntity;                           // Dados detalhados do item (com JOIN do produto)
+  onEdit: (item: BuyWithProductEntity) => void;         // Ação para abrir modal de edição de quantidade
+  onDelete: (id_product: number, name: string) => void; // Ação para excluir o item específico
+}
+
+// Props do Modal para buscar Produto castrados por o código de barra (Adcionar a lista) - Câmera
+export interface BuyBarcodeProps {
+  visible: boolean;                         // Controla se a câmera está ativa
+  onScanSuccess: (barcode: string) => void; // Retorna o código lido
+  onClose: () => void;                      // Fecha a tela da câmera
+}
+
+// Props do Modal para buscar Produto cadastrados por nome (Adcionar a lista)
+export interface BuySearchProductProps {
+  visible: boolean;                                        // Controla se o modal de filtram está visível ou oculto
+  onChangeSearchText: (text: string) => void;              // Função executada ao digitar o texto no de busca
+  searchResults: ProductSearchResult[];                    // Lista os produtos encontrados na busca
+  onSelectProduct: (product: ProductSearchResult) => void; // Função ap selecionar o produto na busca para adicionar à lista
+  onClose: () => void;                                     // Função executada o fechamento do model
+  onCancel: () => void;                                    // Função executada ao cancelar - limpar/fechar modal
+}
+
+// Props do Footer de totalizador do valor da compra
+export interface BuyFooterTotalProps {
+  totalValue: number;     // Valor total acumulado da compra
+  onFinalize: () => void; // Função para finalizar o fluxo de compra
+}
+
+// Props do Modal para selecionar Fornecedor/Mercado para finaliza a compra
+export interface FinishBuyProps {
+  visible: boolean;                                     // Controla a exibição do modal na tela
+  suppliers: SupplierEntity[];                          // Lista de fornecedores disponíveis
+  onSelectSupplier: (supplier: SupplierEntity) => void; // Função para selecionar um fornecedor
+  onClose: () => void;                                  // Função para fechar o modal
+}
+
+// -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
+
+// Estado centralizado retornado pelo Hook
 export interface BuyState {
-  items: BuyCartItem[];                                       // Lista itens no carrinho de compra
-  suppliers: SupplierEntity[];                                // Lista de fornecedores/mercados
-  loading: boolean;                                           // Indica carregamento na tela
-  error: string | null;                                       // Mensagem de erro atual
-  showAddOptions: boolean;                                    // Exibe botões de adição sem lista
-  showCameraModal: boolean;                                   // Exibe modal da câmera/código de barras
-  showNameSearchModal: boolean;                               // Exibe modal de busca por nome
-  showSupplierModal: boolean;                                 // Exibe modal de seleção de fornecedor
-  editingItem: { item: BuyCartItem; index: number } | null;   // Item sendo editado atualmente
+  items: BuyItem[];                      // Lista itens na compra
+  searchResults: ProductSearchResult[];  // Busca produto por nome
+  suppliers: SupplierEntity[];           // Lista de fornecedores/mercados
+  loading: boolean;                      // Spinner/Carregamento ativado
+  error: string | null;                  // Erros ocorridos durante o fluxo
 }
-
-// Define as intenções (Intents/Actions) que a interface pode despachar para o ViewModel
+// Intenções (MVI) aceitas pelo dispatch do ViewModel
 export type BuyIntent =
-  | { type: 'LOAD_BUY_LIST' }                                                                     // Intenção para carregar lista de compra   
-  | { type: 'ADD_BY_BARCODE'; payload: { barcode: string } }                                      // Intenção para adicionar produto código de barra
-  | { type: 'ADD_BY_PRODUCT'; payload: { product: ProductEntity | SearchProductResult } }         // Intenção para adicionar produto por nome 
-  | { type: 'UPDATE_ITEM'; payload: { index: number; quantityText: string; valueText: string } }  // Intenção para editar produto da lista
-  | { type: 'REMOVE_ITEM'; payload: { index: number } }                                           // Intenção para remover produto da lista 
-  | { type: 'FINALIZE'; payload: { id_supplier: number } };                                       // Intenção para finalizar a compra
+  | { type: 'LOAD' }
+  | { type: 'CREATE'; payload: {id_product: number, qt_product: number, vl_product: number } }  // Intenção para cadastrar
+  | { type: 'UPDATE'; payload: { id_product: number; qt_product: number; vl_product: number } } // Intenção para editar produto da lista
+  | { type: 'DELETE'; payload: { id_product: number } }                                         // Intenção para excluir um registro
+  | { type: 'CLEAR' }                                                                           // Intenção para excluir todos

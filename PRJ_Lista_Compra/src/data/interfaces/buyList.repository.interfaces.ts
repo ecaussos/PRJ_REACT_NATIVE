@@ -23,6 +23,9 @@ export interface IBuyListRepository {
   /** Verifica se o produto já está na lista */
   findByProductId(id_product: number): Promise<BuyListEntity | null>;
 
+  /** Verifica se existe compra ativa, tabela buy com registro */
+  findByActiveBuy(): Promise<boolean>;
+
   /** Adiciona novo item */
   create(item: CreateBuyListDTO): Promise<void>;
 

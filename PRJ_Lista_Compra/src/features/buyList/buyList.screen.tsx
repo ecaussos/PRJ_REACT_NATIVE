@@ -7,6 +7,7 @@ import {
   BuyListCameraModal,
   BuyListEditModal,
   BuyListFilterModal,
+  BuyListFooterModal,
   BuyListItemModal,
   BuyListSearchModal,
 } from './buyList.form';
@@ -39,8 +40,8 @@ export default function BuyListScreen() {
   /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
 
   // Função para realizar a edição do registro
-  const handleOpenEdit = (id: number, quantity: number) => {
-    form.startEditing(id, quantity); // Preenche o formulário com os dados do registro selecionado
+  const handleOpenEdit = (id: number, productId: number, quantity: number) => {
+    form.startEditing(id, productId, quantity); // Preenche o formulário com os dados do registro selecionado
   };
 
   // Função para salvar o registro e fechar o formulário de edição
@@ -91,7 +92,7 @@ export default function BuyListScreen() {
             groupName={item.nm_group} // Passa o nome do grupo retornado pelo JOIN
             quantity={item.qt_product} // Passa a quantidade cadastrada
             // Editar: Ao clicar no botão pega os dados do registro - Preenche campos
-            onEdit={() => handleOpenEdit(item.id_list_buy, item.qt_product)}
+            onEdit={() => handleOpenEdit(item.id_list_buy, item.id_product, item.qt_product)}
             // Deletar: Ao clicar no botão delete o registro
             onDelete={() => handleDeleteData(item.id_list_buy, item.nm_product)}
           />
@@ -101,7 +102,11 @@ export default function BuyListScreen() {
           !state.loading ? <Text style={styles.emptyText}>Nenhum registro encontrado.</Text> : null
         }
       />
-
+      {/* Apresenta a quantidade total dos registros na lista - Verifica se a lista tem registro */}
+      <BuyListFooterModal
+        totalRecords={state.totalRecords} // Quantidade de registro cadastrado
+        onClearList={handleClearList}     // Função para excluir todos os registros cadastrados
+      />
       {/* 1. Modal Opções para Adicionar produto (Código de Barra/Nome) */}
       <BuyListAddItemModal
       showModal={showAddModal}                  // Exibe ou oculta o modal principal de adição

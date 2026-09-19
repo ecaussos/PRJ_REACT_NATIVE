@@ -146,6 +146,28 @@ export function BuyListItemModal({
   );
 }
 
+// Apresenta o quantidade total dos registros na lista - Verifica se a lista tem registro
+export function BuyListFooterModal({
+  totalRecords,             // Valor do campo total registro
+  onClearList,              // Função para Limpar lista
+}: {
+  totalRecords: number;     // Texto do campo total registro
+  onClearList: () => void;  // Executado ao clicar no botão
+}) {
+  // -------- MONTAGEM DA TELA -------- //
+  return (
+    <View style={styles.footer}>
+      {/* Titulo do modal */}
+      <Text style={styles.titlefooter}>Total de Itens: {totalRecords}</Text>
+      {/* Botão aplica a limpeza/exclusão de todos os registros cadastrados */}
+      <TouchableOpacity style={styles.actionButtonFooter} onPress={onClearList}>
+        {/* Título do botão */}
+        <Text style={styles.buttonText}>Excluir Lista</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // Função para apresentar o modal para a edição - Quantidade
 export function BuyListEditModal({
   showModal,   // Estado que exibe ou oculta o modal

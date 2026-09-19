@@ -9,8 +9,10 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
   const [state, setState] = useState<BuyListState>({
     items: [],          // Lista inicial de registros cadastrados (vazia)
     searchResults: [],  // Lista de resultados da busca de produtos
+    totalRecords: 0,    // apresenta quantidade de registro cadastrados
+    checkBuy: false,    // Flag para controle de mensagens de validação de compra
     loading: false,     // Flag para controle de spinner/loading durante requisições
-    error: null,        // Mensagem de erro capturada nas operações (null) 
+    error: null,        // Mensagem de erro capturada nas operações (null)
   });
 
   // Estados locais para controle de formulário, campo de busca e edição
@@ -29,40 +31,93 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
     setEditingId(null);         // Limpa o ID, voltando o formulário para modo de criação
   }, []);
 
+
+  // Função para verificar e exibir a mensagem informativa compra em andamento ao adicionar produto (1 Vez)
+  const checkBuyStatus = useCallback( async () => {
+    try{
+      // Chama a função para consulta os registros da tabela buy (Compra)
+      const hasActiveBuy = await model.hasActiveBuy();
+
+      setState(prev => {
+        const mustShowAlert = BuyListModel.shouldShowBuyAlert(hasActiveBuy, prev.checkBuy);
+        if (mustShowAlert) {
+          Alert.alert(
+            'Compra em Andamento',
+            'Existe uma compra em andamento. Após adicionar os produtos na lista de compra, você deve atualizar ou cancelar a compra.'
+          );
+          return { ...prev, checkBuy: true };
+      }
+      return prev;
+    });
+    }catch(err){
+      
+    }
+  }, [model]);
+
   // Processador de intenções da interface (MVI)  
   const dispatch = useCallback(async (intent: BuyListIntent) => {
     // Ativa o estado de carregamento e reseta mensagens de erro anteriores
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      switch (intent.type) {                                                        // Obtém os valores do Intent do type 
-        case 'LOAD': {                                                              // Se a intenção for igual a LOAD
-          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros e armazena
-          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza o estado mantendo os anteriores
+      switch (intent.type) {                                                          // Obtém os valores do Intent do type 
+        case 'LOAD': {                                                                // Se a intenção for igual a LOAD
+          const data = await model.fetchAll();                                        // Chama a função de busca de todos os registros e armazena
+          const hasActiveBuy = await model.hasActiveBuy();                            // Obter o valor do modal atual da mensagem
+          setState(prev => ({                                                         // Atualiza o estado mantendo os anteriores
+            ...prev,
+            items: data,
+            totalRecords: data.length,
+            checkBuy: hasActiveBuy ? prev.checkBuy : false,
+            loading: false 
+          }));
           break;
         }
-        case 'CREATE': {                                                            // Se a intenção for igual a CREATE 
-          await model.create(intent.payload.id_product, intent.payload.qt_product); // Envia a intenção de criar com os campos
-          resetForm();                                                              // Limpa formulário
-          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros
-          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza os itens do estado
+        case 'CREATE': {                                                              // Se a intenção for igual a CREATE 
+          await model.create(intent.payload.id_product, intent.payload.qt_product);   // Envia a intenção de criar com os campos
+          resetForm();                                                                // Limpa formulário
+          const data = await model.fetchAll();                                        // Chama a função de busca de todos os registros
+          setState(prev => ({                                                         // Atualiza o estado mantendo os anteriores
+            ...prev,
+            items: data,
+            totalRecords: data.length,
+            loading: false
+          }));
+          checkBuyStatus();                                                           // Verificação de alerta compra produto pendente
           break;
         }
-        case 'UPDATE': {                                                            // Se a intenção for igual a UPDATE
-          await model.update(intent.payload.id_list_buy, intent.payload.qt_product);// Envia a intenção de atualização
-          resetForm();                                                              // Limpa formulário                             
-          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros
-          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza os itens do estado
+        case 'UPDATE': {                                                              // Se a intenção for igual a UPDATE
+          await model.update(intent.payload.id_list_buy, intent.payload.qt_product);  // Envia a intenção de atualização
+          resetForm();                                                                // Limpa formulário                             
+          const data = await model.fetchAll();                                        // Chama a função de busca de todos os registros
+          setState(prev => ({                                                         // Atualiza o estado mantendo os anteriores
+            ...prev,
+            items: data,
+            totalRecords: data.length,
+            loading: false
+          }));
           break;
         }
-        case 'DELETE': {                                                            // Se a intenção for igual a DELETE
-          await model.delete(intent.payload);                                       // Envia a intenção para deletar
-          const data = await model.fetchAll();                                      // Chama a função de busca de todos os registros
-          setState(prev => ({ ...prev, items: data, loading: false }));             // Atualiza os itens do estado
+        case 'DELETE': {                                                              // Se a intenção for igual a DELETE
+          await model.delete(intent.payload);                                         // Envia a intenção para deletar
+          const data = await model.fetchAll();                                        // Chama a função de busca de todos os registros
+          setState(prev => ({                                                         // Atualiza o estado mantendo os anteriores
+            ...prev,
+            items: data,
+            totalRecords: data.length,
+            checkBuy: false,
+            loading: false
+          }));
           break;
         }
-        case 'CLEAR_LIST': {                                                        // Se a intenção for igual a Excluir toda a lista
-          await model.clear();                                                      // Envia a intenção para excluir tudo
-          setState(prev => ({ ...prev, items: [], loading: false }));               // Esvazia os itens do estado
+        case 'CLEAR': {                                                               // Se a intenção for igual a Excluir toda a lista
+          await model.clear();                                                        // Envia a intenção para excluir tudo
+          setState(prev => ({                                                         // Esvazia os itens do estado
+            ...prev,
+            items: [],
+            totalRecords: 0,
+            checkBuy: false,
+            loading: false
+          }));
           break;
         }
       }
@@ -133,7 +188,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
           style: 'destructive',                                               // Estilo visual de alerta
           onPress: async () => {                                              // Ação executada ao confirmar a limpeza da lista
             try {
-              await dispatch({ type: 'CLEAR_LIST' });                         // Envia a intenção para limpar os registros no estado
+              await dispatch({ type: 'CLEAR' });                         // Envia a intenção para limpar os registros no estado
               Alert.alert('Sucesso', 'Lista de compras limpa!');              // Exibe confirmação após executar a operação
             } catch (err: any) {
               Alert.alert('Erro', err.message || 'Erro ao limpar a lista.');  // Exibe aviso caso a operação falhe
@@ -149,7 +204,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
       try {
         const addProduct = await model.createByBarcode(barcode);                // Executa função busca/inserção do produto por código de barras
         await dispatch({ type: 'LOAD' });                                       // Envia a intenção para recarrega a lista de produtos atualizada
-
+        checkBuyStatus();                                                       // Verificação de alerta compra produto pendente
         const product = addProduct.nm_product;                                  // Define o nome do produto
 
         return await new Promise<boolean>((addAnother) => {                     // Aguarda retorno para adicionar outro produto
@@ -180,7 +235,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
         return true;                                                            // Mantém o modal código de barra aberto
       }
     },
-    [dispatch, model, resetForm]                                                // Dependências do hook para garantir a atualização da função
+    [dispatch, model, resetForm, checkBuyStatus]            // Dependências do hook para garantir a atualização da função
   );
 
   // Realiza a busca dinâmica de produtos por nome ou código para o Modal
@@ -204,6 +259,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
           type: 'CREATE',                                                               // Identificação do tipo da intenção
           payload: { id_product: item.id_product, qt_product: 1 },                      // Envia o campos para do registro
         });
+        checkBuyStatus();
         return await new Promise<boolean>((addAnother) => {                             // Aguarda retorno para adicionar outro produto
           Alert.alert(                                                                  // Exibe alerta de confirmação nativo
             'Sucesso',                                                                  // Título do alerta de confirmação
@@ -236,7 +292,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
         return true;                                                                    // Mantem o modal de pesquisa aberto
       }
     },
-    [dispatch, resetForm]                                                               // Dependências do hook para garantir a atualização da função
+    [dispatch, resetForm, checkBuyStatus]                                                               // Dependências do hook para garantir a atualização da função
   );
 
   // Carregamento inicial ao montar o hook
@@ -259,13 +315,14 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
   });
 
   // Função de edição para preencher campos do formulário
-  const startEditing = (id: number, quantity: number) => {
+  const startEditing = (id: number, productId:number, quantity: number) => {
     setEditingId(id);               // Salva o ID do item
+    setProductId(String(productId)); // Salva o ID do produto no estado
     setQuantity(String(quantity));  // Preenche a quantidade no campo
   };
 
   return {
-state: {
+    state: {
       ...state, // Copia o estado original
       items: filteredItems, // Subtitui a lista de itens pela lista filtrada
     },

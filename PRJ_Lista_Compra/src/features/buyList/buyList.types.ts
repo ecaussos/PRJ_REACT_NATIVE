@@ -61,7 +61,9 @@ export interface BuyListSearchProps {
 // Estado centralizado retornado pelo Hook
 export interface BuyListState {
   items: BuyListItemWithProductEntity[]; // Lista de itens cadastrados com dados de produtos
-  searchResults: ProductSearchResult[];  // <-- busca produto por nome
+  searchResults: ProductSearchResult[];  // Busca produto por nome
+  totalRecords: number;                  // Total de registro cadastrados
+  checkBuy: boolean;                     // Validação de compra cadastrada
   loading: boolean;                      // Spinner/Carregamento ativado
   error: string | null;                  // Erros ocorridos durante o fluxo
 }
@@ -72,4 +74,4 @@ export type BuyListIntent =
   | { type: 'CREATE'; payload: { id_product: number; qt_product: number } }  // Intenção para cadastrar
   | { type: 'UPDATE'; payload: { id_list_buy: number; qt_product: number } } // Intenção para atualizar 
   | { type: 'DELETE'; payload: number }                                      // Intenção para excluir
-  | { type: 'CLEAR_LIST' }                                                   // Intenção para excluir todos
+  | { type: 'CLEAR' }                                                        // Intenção para excluir todos

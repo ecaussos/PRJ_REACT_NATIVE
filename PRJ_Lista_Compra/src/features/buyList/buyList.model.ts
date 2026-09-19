@@ -152,7 +152,21 @@ export class BuyListModel implements IBuyListModel {
     const validQty = Number(quantity) > 0;
     return validProduct && validQty;
   }
-
+  
+  async hasActiveBuy(): Promise<boolean> {
+    try {
+        return await this.repository.findByActiveBuy();
+      } catch (error: any) {
+        console.error('Erro ao verificar compra ativa no Model:', error);
+        return false; // Retorna false por padrão em caso de erro para não travar a aplicação
+      }
+    }
+  
+  // Regra de negócio: Valida compra em andamento antes de adicionar produto na lista - (Apresenta 1 vez a mensagem)
+  static shouldShowBuyAlert(hasActiveBuy: boolean, checkBuyAlert: boolean): boolean {
+    return hasActiveBuy && !checkBuyAlert;
+  }
+  
   // Regra de negócio: Constrói a intenção (Intent) para Salvar/Editar - Fábrica de ações (Action Factory)
   static buildSaveAction(
     id_product: number | string,  // ID do produto ou do item da lista
@@ -168,7 +182,7 @@ export class BuyListModel implements IBuyListModel {
       return {
         type: 'UPDATE' as const,      // Define o type utilizado no hook
         payload: {                    // Dados necessários para atualizar o registro
-          id_list_buy: parsedId,      // Atribui o id convertido
+          id_list_buy: editingId,      // Atribui o id da lista de compra
           qt_product: parsedQuantity, // Atribui a quantidade convertida
         },
       };

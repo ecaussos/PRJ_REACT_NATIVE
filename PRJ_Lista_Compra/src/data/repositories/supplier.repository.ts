@@ -1,9 +1,9 @@
 // src/data/repositories/supplierRepository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
 import {
-    CreateSupplierDTO,
-    SupplierEntity,
-    UpdateSupplierDTO,
+  CreateSupplierDTO,
+  SupplierEntity,
+  UpdateSupplierDTO,
 } from '../entities/supplier.entity';
 import { ISupplierRepository } from '../interfaces/supplier.repository.interface';
 
