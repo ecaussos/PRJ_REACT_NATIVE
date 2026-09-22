@@ -3,21 +3,21 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   // Container principal que envolve toda a tela
-  container: { 
-    flex: 1, 
-    padding: 16, 
-    backgroundColor: '#f8f9fa', 
-    paddingTop: 50 
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    paddingTop: 50,
   },
-  // Título principal da tela
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginBottom: 12, 
-    textAlign: 'center', 
-    color: '#333' 
+  // Estilo do título principal da tela
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#333',
   },
-  // Subtítulos de seções
+  // Estilo dos subtítulos de seções
   subtitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -25,41 +25,60 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#444',
   },
-  // Espaçamento vertical para o indicador de carregamento (ActivityIndicator)
-  loader: { 
-    marginVertical: 10 
+  // Espaçamento vertical para o indicador de carregamento
+  loader: {
+    marginVertical: 10,
   },
-  // Destacar mensagens de erro na interface
-  error: { 
-    color: '#FF3B30', 
-    marginBottom: 8, 
-    textAlign: 'center', 
-    fontWeight: '600' 
+  // Estilo para destacar mensagens de erro
+  error: {
+    color: '#FF3B30',
+    marginBottom: 8,
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  // Card branco que agrupa os elementos do formulário de cadastro e edição
-  formCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-  },
-  // Caixas de texto (Inputs)
-  input: {
-    backgroundColor: '#fff',
+
+  // AGRUPADOR DE BOTÕES PRINCIPAIS (FIELDSET)
+  sectionContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 45,
-    color: '#333',
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 12,
+    backgroundColor: '#fafafa',
+    position: 'relative',
+    paddingTop: 18,
   },
-  // Card individual que exibe as informações na lista
+  sectionTitle: {
+    position: 'absolute',
+    top: -10,
+    left: 14,
+    backgroundColor: '#fafafa',
+    paddingHorizontal: 6,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#888',
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+
+  // LISTA E ITENS
   itemCard: {
     backgroundColor: '#fff',
     padding: 12,
@@ -71,23 +90,36 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 1,
   },
-  // Layout interno do card para alinhar o texto à esquerda e os botões de ação à direita
-  itemInfo: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
+  itemInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  // Container de texto com ajuste flex
   textContainer: {
     flex: 1,
     marginRight: 8,
   },
-  // Container que organiza os botões de ícone (editar e excluir) lado a lado
-  actionButtonsContainer: { 
-    flexDirection: 'row', 
-    gap: 8 
+  itemList: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222',
   },
-  // Botões modernos em formato de ícone quadrado com sombra
+  details: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    marginTop: 20,
+  },
+
+  // BOTÕES DE AÇÃO DOS ITENS
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   iconButton: {
     width: 38,
     height: 38,
@@ -100,144 +132,205 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
-  // Cor de fundo específica para o botão de editar (azul)
-  editButton: { 
-    backgroundColor: '#0051FF' 
+  editButton: {
+    backgroundColor: '#0051FF',
   },
-  // Cor de fundo específica para o botão de excluir (vermelho)
-  deleteButton: { 
-    backgroundColor: '#FF0000' 
+  deleteButton: {
+    backgroundColor: '#FF0000',
   },
-  // Nome principal do item na lista
-  itemList: { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    color: '#222' 
+
+  // INPUTS E FORMULÁRIOS
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 42,
+    color: '#333',
+    marginBottom: 10,
   },
-  // Texto exibido na lista quando não há cadastrados
-  emptyText: { 
-    textAlign: 'center', 
-    color: '#888', 
-    marginTop: 20 
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: '#fafafa',
   },
-  // Estilo do texto exibido na lista quando não há produtos cadastrados
-  details: { 
-    fontSize: 12, 
-    color: '#666', 
-    marginTop: 2 
-  },
-  // Quantidade do item na lista
-  quantity: {
-    fontSize: 14,
-    color: '#007AFF',
-    marginTop: 6,
-    fontWeight: '600',
-  },
-  // Rodapé com botão
-  footer: {
-    marginTop: 12,
-    paddingBottom: 16,
-  },
-  // Fundo escurecido do modal
+
+  // ESTRUTURA GENÉRICA DE MODAIS E OVERLAY
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  // Conteúdo interno do modal
   modalContent: {
+    width: '100%',
     backgroundColor: '#fff',
     padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    gap: 12,
+    borderRadius: 12,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  // Título do modal
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  modalButtonsContainer: {
+    gap: 8,
+    marginTop: 8,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  modalRowButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Estilos específicos para o Modal de Edição de Quantidade
+  editModalProductName: {
     textAlign: 'center',
     marginBottom: 10,
     color: '#333',
-  },
-  // Botões de opção dentro do modal principal
-  modalOptionButton: {
-    backgroundColor: '#f1f3f5',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  // Texto dos botões de opção do modal
-  modalOptionText: {
-    fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
   },
-  // Espaçamento entre os botões
-  modalButtonsContainer:{
-    gap: 8
-  },
-
-  // BOTOÇÕES ADICIONAR PRODUTO
-  // Caixa externa agrupadora dos botões com borda e efeito Fieldset
-  sectionContainer: {
+  editModalInput: {
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#fafafa',
-    position: 'relative',
-    paddingTop: 18,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 42,
+    color: '#333',
+    marginBottom: 10,
+    width: '100%',
+    textAlign: 'center',
   },
 
-  // Título flutuante posicionado na borda superior da caixa
-  sectionTitle: {
-    position: 'absolute',
-    top: -10,
-    left: 14,
-    backgroundColor: '#fafafa',
-    paddingHorizontal: 6,
+  inputLabel: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: "#888",
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
   },
 
-  // Linha interna que distribui os botões lado a lado com espaçamento
-  buttonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
+  saveButtonColor: {
+    backgroundColor: '#34C759',
+  },
+  cancelButtonColor: {
+    backgroundColor: '#FF3B30',
   },
 
-  // Estilo do botão de leitura por câmera (Código)
+  // MODAL ADICIONAR PRODUTO - CÓDIGO/NOME 
   actionButtonCamera: {
     flex: 1,
     backgroundColor: '#007AFF',
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-
-  // Estilo do botão de consulta por nome
   actionButtonName: {
     flex: 1,
     backgroundColor: '#34C759',
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullWidthCancelButton: {
+    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#8E8E93',
+    marginTop: 15,
   },
 
-  // Estilo de texto padrão para os botões de ação rápida
-  buttonText: {
-    color: '#FFF',
+  // RODAPÉ E MODAL FINALIZAR COMPRA
+  footer: {
+    backgroundColor: '#ededed',
+    padding: 12,
+    borderRadius: 12,
+    gap: 12, // Adiciona um espaçamento vertical entre a linha de texto e os botões
+  },
+
+  textRow: {
+    flexDirection: 'row', // Coloca os textos na mesma linha
+    justifyContent: 'space-between', // Separa um para cada lado
+    alignItems: 'center',
+    width: '100%',
+  },
+
+  totalfooter: {
+    fontSize: 15,
     fontWeight: 'bold',
-    fontSize: 14,
+    color: '#222',
   },
-  productName: { fontSize: 16, fontWeight: 'bold', color: '#222', flex: 1 },
-  price: { fontSize: 16, fontWeight: 'bold', color: '#34C759' },
-  date: { fontSize: 11, color: '#888', marginTop: 6, textAlign: 'right' },
 
+  buttonsFooter: {
+    flexDirection: 'row', // Coloca os botões na mesma linha
+    justifyContent: 'space-between', // Separa um para a esquerda e outro para a direita
+    alignItems: 'center',
+    width: '100%',
+  },
 
+  actionButtonFooter: {
+    backgroundColor: '#004cff',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    width:'45%',
+    borderRadius: 8,
+  },
 
+  buttonFooterClear: {
+    backgroundColor: '#ff0800',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    width:'45%',
+    borderRadius: 8,
+  },
+
+  //MODAL FINALIZAR COMPRA
+  modalOptionButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  actionButtonList: {
+    backgroundColor: '#8E8E93',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
 });

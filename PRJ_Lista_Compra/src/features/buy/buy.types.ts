@@ -32,11 +32,16 @@ export interface BuyActionsProps {
 
 // Props do Modal de filtragem seleção de item na lista (FlatList)
 export interface BuyFilterProps {
-  visible: boolean;                           // Controla se o modal de filtram está visível ou oculto
-  searchText: string;                         // Valor do campo de texto digitado para a filtragem
-  onChangeSearchText: (text: string) => void; // Função executada ao digitar o texto da filtragem
-  onClose: () => void;                        // Função executada o fechamento do model
-  onCancel: () => void;                       // Função executada ao cancelar - limpar/fecha modal
+  visible: boolean;                               // Controla se o modal de filtragem está visível ou oculto
+  searchText: string;                             // Valor do campo de texto digitado para a filtragem
+  onChangeSearchText: (text: string) => void;     // Função executada ao digitar o texto da filtragem
+  onlyWithoutPrice: boolean;                      // Estado do filtro para itens sem valor/zero
+  onToggleOnlyWithoutPrice: () => void;           // Função para alternar o estado do filtro de preço
+  selectedGroup: string;                          // Nome do grupo atualmente selecionado para a filtragem
+  onChangeSelectedGroup: (group: string) => void; // Função para atualizar a seleção do grupo
+  availableGroups: string[];                      // Lista de nomes de grupos disponíveis para seleção
+  onClose: () => void;                            // Função executada no fechamento do modal
+  onCancel: () => void;                           // Função executada ao cancelar - limpa e fecha o modal
 }
 
 // Props para a exibição de cada item da Lista de registros cadastrados

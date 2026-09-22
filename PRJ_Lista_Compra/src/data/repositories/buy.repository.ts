@@ -5,6 +5,7 @@ import {
   BuyEntity,
   BuyWithProductEntity,
   CreateBuyDTO,
+  CreateBuyHistDTO,
 } from '../entities/buy.entity';
 import { IBuyRepository } from '../interfaces/buy.repository.interfaces';
 
@@ -154,8 +155,6 @@ export class BuyRepository implements IBuyRepository {
     }
   }
 
-
-
   // Limpar toda a compra
   async clearBuy(): Promise<void> {
     try {
@@ -163,6 +162,34 @@ export class BuyRepository implements IBuyRepository {
       await db.runAsync(`DELETE FROM buy;`);
     } catch (error: any) {
       throw new Error(`Erro ao limpar a compra: ${error.message}`);
+    }
+  }
+
+  async createBuyHist(item: CreateBuyHistDTO): Promise<void> {
+    try {
+      const db = await getDBConnection();
+      const query = `
+        INSERT INTO hist_buy (
+          id_product,
+          id_supplier,
+          qt_product,
+          vl_product,
+          dt_list_buy,
+          dt_hist_buy
+        ) VALUES (?, ?, ?, ?, ?, ?);
+      `;
+
+      // Garante a ordem correta exata dos parâmetros esperados pela SQL
+      await db.runAsync(query, [
+        item.id_product,
+        item.id_supplier,
+        item.qt_product,
+        item.vl_product,
+        item.dt_list_buy,
+        item.dt_hist_buy,
+      ]);
+    } catch (error: any) {
+      throw new Error(`Erro ao inserir histórico da compra: ${error.message}`);
     }
   }
 }

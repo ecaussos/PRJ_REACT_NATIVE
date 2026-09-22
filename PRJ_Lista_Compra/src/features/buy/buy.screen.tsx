@@ -44,6 +44,8 @@ export default function BuyScreen(){
   const [showSearchModal, setShowSearchModal] = useState(false);
   // Controla a visibilidade do modal de seleção de mercado para finalizar compra
   const [showFinishModal, setShowFinishModal] = useState(false);
+  //
+  const [onlyWithoutPrice, setOnlyWithoutPrice] = useState(false);
 
   /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
 
@@ -75,43 +77,47 @@ export default function BuyScreen(){
       {/* Exibição de mensagens de erro, caso ocorram */}
       {state.error && <Text style={styles.error}>{state.error}</Text>}
       
-      {/* Botões principais de ação - Adicionar, Filtrar e Limpar */}
+      {/* Botões principais de ação - Adicionar, Filtrar e Limpar */} 
       <BuyActions
-        onOpenCreateModal={() => setShowAddModal(true)} // Ação do botão para mostrar modal para adicionar item Código/Nome
-        onOpenFilterModal={() => setShowFilterModal(true)} // Ação do botão para mostrar modal de filtragem de registro
-        onClearSearch={() => form.setSearchText('')} // Ação do botão para limpar a filtragem de registro atual
-        hasActiveSearch={form.searchText.length > 0} // Passa "true" se houver algum texto digitado na busca
-        onClearBuy={handleClearBuy} // Ação do botão para limpar toda a lista
+        onOpenCreateModal={() => setShowAddModal(true)}     // Ação do botão para mostrar modal para adicionar item Código/Nome
+        onOpenFilterModal={() => setShowFilterModal(true)}  // Ação do botão para mostrar modal de filtragem de registro
+        onClearSearch={form.handleClearFilters}             // Ação do botão para limpar a filtragem de registro atual
+        hasActiveSearch={                                   // Propriedade booleana que define se existe algum filtro ativo
+          form.searchText.length > 0 ||                     // Verifica se há texto digitado no campo de busca
+          form.onlyWithoutPrice ||                          // Verifica se o filtro "apenas sem preço" está marcado
+          form.selectedGroup.length > 0                     // Verifica se algum grupo está selecionado
+        }                                                   // Retorna verdadeiro se pelo menos uma das condições for atingida
+        onClearBuy={handleClearBuy}                         // Ação do botão para limpar toda a lista
       />
       {/* Subtítulo da seção de listagem */}
       <Text style={styles.subtitle}>Produtos para Compra</Text>
       {/* Lista (FlatList) para renderizar os registros cadastrados e filtrados */}
       <View style={{ flex: 1 }}>
-      <FlatList
-        // Fonte de dados que será obtida para montar a lista
-        data={state.items}
-        // Define ID para identificar registros na lista
-        keyExtractor={(item) => String(item.id_product)}
-        //Monta os items na tela
-        renderItem={({ item }) => (
-        // Apresenta dados dos registros e botões de ação
-          <BuyItemModal
-            // Pega a descrição no nome
-            name={item.nm_product} // Passa o nome do produto cadastrado
-            groupName={item.nm_group} // Passa o nome do grupo retornado pelo JOIN
-            quantity={item.qt_product} // Passa a quantidade cadastrada
-            price={item.vl_product ?? 0}// Passa a quantidade cadastrada
-            // Editar: Ao clicar no botão pega os dados do registro - Preenche campos
-            onEdit={() => handleOpenEdit(item.id_product, item.qt_product, item.vl_product ?? 0)}
-            // Deletar: Ao clicar no botão delete o registro
-            onDelete={() => handleDeleteData(item.id_product, item.nm_product)}
-          />
-        )}
-        // Mensagem exibida caso a lista filtrada esteja vazia
-        ListEmptyComponent={
-          !state.loading ? <Text style={styles.emptyText}>Nenhum produto selecionado para a compra.</Text> : null
-        }
-      />
+        <FlatList
+          // Fonte de dados que será obtida para montar a lista
+          data={state.items}
+          // Define ID para identificar registros na lista
+          keyExtractor={(item) => String(item.id_product)}
+          //Monta os items na tela
+          renderItem={({ item }) => (
+          // Apresenta dados dos registros e botões de ação
+            <BuyItemModal
+              // Campos utilizando para a listaagem
+              name={item.nm_product} // Passa o nome do produto cadastrado
+              groupName={item.nm_group} // Passa o nome do grupo retornado pelo JOIN
+              quantity={item.qt_product} // Passa a quantidade cadastrada
+              price={item.vl_product ?? 0}// Passa a quantidade cadastrada
+              // Editar: Ao clicar no botão pega os dados do registro - Preenche campos
+              onEdit={() => handleOpenEdit(item.id_product, item.qt_product, item.vl_product ?? 0)}
+              // Deletar: Ao clicar no botão delete o registro
+              onDelete={() => handleDeleteData(item.id_product, item.nm_product)}
+            />
+          )}
+          // Mensagem exibida caso a lista filtrada esteja vazia
+          ListEmptyComponent={
+            !state.loading ? <Text style={styles.emptyText}>Nenhum produto selecionado para a compra.</Text> : null
+          }
+        />
       </View>
       {/* Apresenta o valor total dos registros na lista - Verifica se a lista tem registro */}
       {state.items.length > 0 && (
@@ -188,13 +194,22 @@ export default function BuyScreen(){
       />
       {/* 4. Modal para filtrar/localizar registros cadastrados */}
       <BuyFilterModal
-        visible={showFilterModal}                 // Passa o estado que controla a exibição da busca
-        searchText={form.searchText}              // Passa o texto atual digitado para o filtro
-        onChangeSearchText={form.setSearchText}   // Passa a função que atualiza o texto do filtro
-        onClose={() => setShowFilterModal(false)} // Passa a função para fechar o modal/campo de busca
-        onCancel={() => {                         // Passa a função quando cancela a pesquisa/filtragem
-          form.setSearchText('');                 // Limpa o texto pesquisado
-          setShowFilterModal(false);              // Esconde o modal
+        visible={showFilterModal}                                                         // Passa o estado que controla a exibição da busca
+        searchText={form.searchText}                                                      // Passa o texto atual digitado para o filtro
+        onChangeSearchText={form.setSearchText}                                           // Passa a função que atualiza o texto do filtro
+        // Filtrar produto por grupo
+        selectedGroup={form.selectedGroup}                                                // Nome do grupo atualmente selecionado para o filtro
+        onChangeSelectedGroup={form.setSelectedGroup}                                     // Função para atualizar a seleção do grupo
+        availableGroups={form.availableGroups}                                            // Lista com os nomes dos grupos disponíveis para seleção
+        // Filtrar produto com valor zero
+        onlyWithoutPrice={form.onlyWithoutPrice}                                          // Passa o estado do filtro para produtos sem valor/zerados
+        onToggleOnlyWithoutPrice={() => form.setOnlyWithoutPrice(!form.onlyWithoutPrice)} // Alterna o estado do filtro de produtos sem valor
+        // Ações ao fechar ou cancelar o modal
+        onClose={() => setShowFilterModal(false)}                                         // Passa a função para fechar o modal/campo de busca
+        onCancel={() => {                                                                 // Passa a função quando cancela a pesquisa/filtragem
+          form.setSearchText('');                                                         // Limpa o texto pesquisado
+          form.setOnlyWithoutPrice(false);                                                // Desativa o filtro de itens sem valor
+          setShowFilterModal(false);                                                      // Esconde o modal
         }}
       />
       {/* 5. Modal para editar a quantidade de itens da lista de compra */}
@@ -204,7 +219,7 @@ export default function BuyScreen(){
         quantity={form.quantity}                   // Valor da quantidade em texto
         setQuantity={form.setQuantity}             // Função para atualizar a quantidade
         price={form.price}                         // Valor da quantidade em texto
-        setPrice={form.setPrice}
+        setPrice={form.setPrice}                   // Valor do preço em texto
         isEditing={form.isEditing}                 // Passa a flag do formulário
         onSave={handleSave}                        // Função executada ao clicar no botão de salvar
         onCancel={handleCloseForm}                 // Função executada ao cancelar ou fechar o formulário

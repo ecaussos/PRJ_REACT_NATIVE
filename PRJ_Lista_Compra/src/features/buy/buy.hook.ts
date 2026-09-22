@@ -1,7 +1,6 @@
 // src/features/buy/buy.hook.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
-import { BuyHistModel } from '../buyHist/buyHist.model';
 import { BuyListModelInstance } from '../buyList/buyList.model';
 import { SupplierModelInstance } from '../supplier/supplier.model';
 import { BuyModel, BuyModelInstance } from './buy.model';
@@ -17,13 +16,15 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
   });
 
   // Estados locais para controle de formulário, campo de busca e edição
-  const [productId, setProductId] = useState('');                                   // Armazena o valor digitado no campo de grupo
+  const [productId, setProductId] = useState('');                                   // Armazena o valor digitado no campo do ID do produto
   const [quantity, setQuantity] = useState('1');                                    // Armazena o valor digitado no campo quantidade
   const [price, setPrice] = useState('0.00');                                       // Armazena o valor digitado no campo preço
   const [searchText, setSearchText] = useState('');                                 // Armazena o termo de filtragem na listagem
   const [editingId, setEditingId] = useState<number | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
-  const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca de produto código/nome
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar à lista - Código/Nome
+  const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca do produto no modal por código/nome
+  const [onlyWithoutPrice, setOnlyWithoutPrice] = useState(false);                  // Armazena o estado do filtro para produtos sem preço/zerados
+  const [selectedGroup, setSelectedGroup] = useState<string>('');                   // Armazena o nome do grupo selecionado no filtro
 
   // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
@@ -32,6 +33,13 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
     setPrice('0.00');           // Limpa o texto do campo preço
     setSelectedProductId(null); // Limpa o id do produto selecionado na busca código/nome
     setEditingId(null);         // Limpa o ID, voltando o formulário para modo de criação
+  }, []);
+
+// Função para limpar explicitamente todos os filtros
+  const handleClearFilters = useCallback(() => {
+    setSearchText('');          // Reseta a busca por texto do nome do produto
+    setOnlyWithoutPrice(false); // Desativa o filtro de produtos sem preço/zerados
+    setSelectedGroup('');       // Reseta a seleção do grupo no filtro
   }, []);
 
   // Reducer / Dispatch MVI responsável pelas ações assíncronas do estado
@@ -338,28 +346,24 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
             try {
               // Ativa o estado de carregamento
               setState(prev => ({ ...prev, loading: true, error: null }));
-
+              // Pèga a data ataual e associa ao campo
               const currentDate = new Date().toISOString();
-
               // Processa a gravação no histórico e a remoção das tabelas 'buy' e 'buy_list'
               for (const item of state.items) {
-                // A) Insere na tabela de Histórico (buy_history)
-                await BuyHistModel.create({
-                  id_product: item.id_product,
-                  id_supplier: supplierId,
-                  qt_product: item.qt_product,
-                  vl_product: item.vl_product!,
-                  dt_list_buy: item.dt_list_buy || currentDate,
-                  dt_hist_buy: currentDate,
+                // 1. Insere na tabela de Histórico (buy_history)
+                await model.createBuyHist({
+                  id_product: item.id_product,                  // Identificador único do produto cadastrado
+                  id_supplier: supplierId,                      // Identificador do fornecedor associado à compra
+                  qt_product: item.qt_product,                  // Quantidade comprada do produto
+                  vl_product: item.vl_product!,                 // Valor unitário do produto (assumido como não nulo)
+                  dt_list_buy: item.dt_list_buy || currentDate, // Data de criação na lista de compras (ou data atual caso nula)
+                  dt_hist_buy: currentDate,                     // Data do registro histórico da compra
                 });
-
-                // B) Remove da buy_list através do método dedicado por id_product no repositório
+                // 2. Remove da buy_list através do método dedicado por id_product no repositório
                 await model.deleteBuyList(item.id_product);
-
-                // C) Remove da tabela de compras ativas (buy)
+                // 3. Remove da tabela de compras ativas (buy)
                 await model.delete(item.id_product);
               }
-
               // Reseta o estado local da tela (limpa a lista exibida)
               setState(prev => ({
                 ...prev,
@@ -391,15 +395,25 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
   const filteredItems = state.items.filter(item => {
     // Converte o texto digitado para minúsculas e remove espaços
     const searchLower = searchText.toLowerCase().trim(); 
-    // Retorna todos os itens se o campo de busca estiver vazio
-    if (!searchLower) return true;
-    // Verifica se o nome do produto contém o texto pesquisado
+    // 1. Validação do texto: Busca exclusivamente pelo Nome do Produto
     const matchName = item.nm_product.toLowerCase().includes(searchLower);
-    // Verifica se o grupo do produto contém o texto pesquisado (se o grupo existir)
-    const matchGroup = item.nm_group ? item.nm_group.toLowerCase().includes(searchLower) : false;
-    // Retorna verdadeiro se houver correspondência no nome ou no grupo
-    return matchName || matchGroup;
+    const matchText = !searchLower || matchName;
+    // 2. Validação do preço (zerado ou nulo)
+    const isPriceZeroOrEmpty = item.vl_product === null || item.vl_product === undefined || item.vl_product === 0;
+    const matchPriceFilter = onlyWithoutPrice ? isPriceZeroOrEmpty : true;
+    // 3. Validação do Grupo selecionado no ListBox
+    const matchGroupSelect = selectedGroup ? item.nm_group === selectedGroup : true;
+    // Retorna o produto apenas se atender a TODOS os critérios
+    return matchText && matchPriceFilter && matchGroupSelect;
   });
+
+  // Filtra o registro os grupos presentes na compra
+const availableGroups = useMemo(() => {                                           // Memoiza a lista de grupos para evitar reprocessamento desnecessário
+    const groups = state.items                                                    // Mapeia a lista de itens da compra
+      .map(item => item.nm_group)                                                 // Extrai apenas os nomes dos grupos de cada item
+      .filter((group): group is string => Boolean(group && group.trim() !== '')); // Remove valores nulos, indefinidos ou em branco
+    return Array.from(new Set(groups));                                           // Converte para um Set para remover os nomes duplicados
+  }, [state.items]);                                                              // Recalcula apenas quando a lista de itens for alterada
 
   // Prepara o formulário para modo de edição
   const startEditing = (idProduct: number, quantity: number, price: number) => {
@@ -410,24 +424,21 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
     setPrice(String(price));          // Converte o preço para texto e salva
   };
 
-  // Cálculo total da compra acumulada
-  const totalPurchaseValue = useMemo(() => {
-    return state.items.reduce(
-      (acc, item) => acc + (item.qt_product * (item.vl_product || 0)),
-      0
+// Cálculo total do valor usando a lista filtrada (filteredItems)
+  const totalPurchaseValue = useMemo(() => {                            // Memoiza o cálculo do valor total da compra
+    return filteredItems.reduce(                                        // Percorre a lista de itens filtrados acumulando os valores
+      (acc, item) => acc + (item.qt_product * (item.vl_product || 0)),  // Multiplica a quantidade pelo preço do item (ou zero) e soma
+      0                                                                 // Valor inicial do acumulador
     );
-  }, [state.items]);
+  }, [filteredItems]);                                                  // Recalcula apenas quando a lista filtrada for alterada
 
-  const totalPurchaseItem = useMemo(() => {
-    return state.items.reduce(
-      (acc, item) => acc + (item.qt_product),
-      0
+  // Cálculo da quantidade total de itens usando a lista filtrada (filteredItems)
+  const totalPurchaseItem = useMemo(() => { // Memoiza o cálculo do total de itens na compra
+    return filteredItems.reduce(            // Percorre a lista de itens filtrados acumulando as quantidades
+      (acc, item) => acc + item.qt_product, // Soma a quantidade do produto ao total acumulado
+      0                                     // Valor inicial do acumulador
     );
-  }, [state.items]);
-
-
-
-
+  }, [filteredItems]);                      // Recalcula apenas quando a lista filtrada for alterada
 
   // Estado computado com itens filtrados
   return {
@@ -450,6 +461,12 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
       setSelectedProductId,                   // Função para alterar o produto selecionado
       isEditing: editingId !== null,          // Booleano indicando se está editando
       editingId,                              // ID do item em edição
+      selectedGroup,                          // Nome do grupo atualmente selecionado no filtro
+      setSelectedGroup,                       // Função para atualizar o grupo selecionado
+      availableGroups,                        // Lista com os nomes dos grupos disponíveis para seleção
+      onlyWithoutPrice,                       // Estado do filtro para itens sem preço/zerados
+      setOnlyWithoutPrice,                    // Função para alterar o estado do filtro sem preço
+      handleClearFilters,                     // Função para resetar todos os parâmetros de filtragem
       resetForm,                              // Função para limpar os campos
       startEditing,                           // Função para iniciar a edição de um item
     },

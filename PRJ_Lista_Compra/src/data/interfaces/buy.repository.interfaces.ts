@@ -4,7 +4,8 @@ import { ProductSearchResult } from '../../features/buy/buy.types';
 import {
   BuyEntity,
   BuyWithProductEntity,
-  CreateBuyDTO
+  CreateBuyDTO,
+  CreateBuyHistDTO,
 } from '../entities/buy.entity';
 
 export interface IBuyRepository {
@@ -25,6 +26,9 @@ export interface IBuyRepository {
 
   /** Adiciona novo item na compra*/
   create(item: CreateBuyDTO): Promise<void>;
+
+  /** Adiciona registros no histórico apos finalizar a compra */
+  createBuyHist(item: CreateBuyHistDTO): Promise<void>; // ✅ Assinatura com o tipo de entrada correto
 
   /** Atualiza quantidade de um item na compra */
   update(id_product: number, qt_product: number, vl_product: number): Promise<void>;

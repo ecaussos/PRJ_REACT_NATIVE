@@ -1,5 +1,5 @@
 // src/features/buy/buy.model.ts
-import { BuyWithProductEntity } from '../../data/entities/buy.entity';
+import { BuyWithProductEntity, CreateBuyHistDTO } from '../../data/entities/buy.entity';
 import { IBuyRepository } from '../../data/interfaces/buy.repository.interfaces';
 import { BuyRepository } from '../../data/repositories/buy.repository';
 import { BuyIntent, BuyItem, ProductSearchResult } from './buy.types';
@@ -11,27 +11,23 @@ export interface IBuyModel {
   fetchByBarcode(barcode: string): Promise<ProductSearchResult>;                        // Busca produto cadastrado pelo código de barras
   searchProducts(query: string): Promise<ProductSearchResult[]>;                        // Pesquisa genérica de produtos por termo
   create(id_product: number, qt_product?: number, vl_product?: number): Promise<void>;  // Adiciona um produto à lista informando ID, quantidade e preço
+  createBuyHist(item: CreateBuyHistDTO): Promise<void>;                                 // Adiciona registros no histórico no apos finalizar a compra
   createByBarcode(barcode: string): Promise<ProductSearchResult>;                       // Adiciona um produto diretamente pelo código de barras
   update(id_product: number, qt_product: number, vl_product: number): Promise<void>;    // Atualiza a quantidade e valor de um item na lista
   delete(id_product: number): Promise<void>;                                            // Remove um item específico da compra
   deleteBuyList(id_product: number): Promise<void>;                                     // Remove um item específico da lista de compra
-  deleteByProductId(id_product: number): Promise<void>;                                 // Remove um item específico da compra
   clear(): Promise<void>;                                                               // Remove todos os itens da lista de compras
 }
 
 export class BuyModel implements IBuyModel {
   // Recebe o repositório por contrato (interface), facilitando testes e inversão de controle
   constructor(private repository: IBuyRepository) {} // Define a dependência por interface no construtor
-  
+    
   async deleteBuyList(id_product: number): Promise<void> {
     if (!id_product || id_product <= 0) {
       throw new Error('ID do produto inválido para exclusão na lista.');
     }
     await this.repository.deleteBuyList(id_product);
-  }
-
-  deleteByProductId(id_product: number): Promise<void> {
-    throw new Error('Method not implemented.');
   }
 
   // Busca todos os registros com dados detalhados do produto (JOIN)
@@ -128,6 +124,29 @@ export class BuyModel implements IBuyModel {
         dt_list_buy: new Date().toISOString(),  // Data e hora atual do cadastro no formato ISO
       });
     }
+  }
+
+  // Insere um novo registro de compra no histórico
+  async createBuyHist(item: CreateBuyHistDTO): Promise<void> {
+    // Validação básica dos campos antes de enviar ao repositório
+    if (!item.id_product || item.id_product <= 0) {
+      throw new Error('ID do produto inválido para geração de histórico.');
+    }
+    if (!item.id_supplier || item.id_supplier <= 0) {
+      throw new Error('Fornecedor deve ser informado para registrar a compra.');
+    }
+    // Valida se não existe dado preenchido e for menor que zero - Quantidade
+    if (!item.qt_product || item.qt_product <= 0) {
+      // Verdadeiro: Gerar mensagem informativa
+      throw new Error('A quantidade deve ser um número maior que zero.');
+    }
+    // Valida se não existe dado preenchido e for menor que zero - Preço
+    if (item.vl_product === undefined || item.vl_product === null || item.vl_product < 0) {
+      // Verdadeiro: Gerar mensagem informativa
+      throw new Error('O valor do produto não pode ser negativo.');
+    }
+    // Executa a persistência através do repositório
+    await this.repository.createBuyHist(item);
   }
 
   // Atualiza a quantidade de um item existente na lista

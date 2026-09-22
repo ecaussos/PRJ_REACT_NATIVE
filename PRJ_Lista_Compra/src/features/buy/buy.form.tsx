@@ -1,5 +1,6 @@
 // src/features/buy/buy.form.tsx
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Picker } from '@react-native-picker/picker';
 import { FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BarcodeScannerScreen from '../scannerBarcode/scannerBarcode.screen';
 import { styles } from './buy.styles';
@@ -49,7 +50,12 @@ export function BuyFilterModal({
   visible,                  // Estado que controla a visibilidade do modal
   searchText,               // Texto atual exibido no campo de entrada de busca
   onChangeSearchText,       // Função chamada ao digitar um texto na caixa de pesquisa
-  onClose,                  // Ação para fehcar o modal
+  onlyWithoutPrice,         // Estado do filtro para itens sem valor/zero
+  onToggleOnlyWithoutPrice, // Função para alternar o estado do filtro de preço
+  selectedGroup,            // Nome do grupo atualmente selecionado para filtragem
+  onChangeSelectedGroup,    // Função para atualizar o grupo selecionado
+  availableGroups,          // Lista com os nomes dos grupos disponíveis para seleção
+  onClose,                  // Ação para fechar o modal
   onCancel,                 // Ação de limpar e fechar o modal
 }: BuyFilterProps){
   // -------- MONTAGEM DA TELA -------- //
@@ -60,10 +66,11 @@ export function BuyFilterModal({
         <View style={styles.modalContent}>
           {/* Titulo do modal */}
           <Text style={styles.modalTitle}>Filtrar Lista de Compras</Text>
-          {/* Caixa de texto para busca na lista */}
+
+          {/* FILTRA PRODUTO POR NOME - Caixa de texto para busca na lista */}
           <TextInput
             style={styles.input}
-            placeholder="Digite para filtrar em tempo real..."
+            placeholder="Buscar por nome..."
             placeholderTextColor="#888"
             // Obtem o texto digitado
             value={searchText}
@@ -72,6 +79,37 @@ export function BuyFilterModal({
             // Foca automaticamente a caixa de texto 
             autoFocus
           />
+          {/* FILTRA PRODUTO POR GRUPO - Listbox com os grupos dos produtor  */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              // Define o grupo selecionado no componente
+              selectedValue={selectedGroup}
+              // Atualiza o grupo selecionado ao alterar o item
+              onValueChange={(itemValue: string) => onChangeSelectedGroup(itemValue)}
+            >
+              {/* Opção padrão para exibir todos os grupos */}
+              <Picker.Item label="Busca por Grupo" value="" />
+              {/* Percorre a lista de grupos disponíveis */}
+              {availableGroups.map((group) => (
+                // Apresenta cada grupo como opção da seleção
+                <Picker.Item key={group} label={group} value={group} />
+              ))}
+            </Picker>
+          </View>
+          {/* FILTRA PRODUTO SEM VALOR - Checkbox para ativar o filtro preço = 0 */}
+          <TouchableOpacity
+            style={styles.checkboxContainer}
+            activeOpacity={0.7}                 // Define a opacidade do botão ao ser pressionado 
+            onPress={onToggleOnlyWithoutPrice}  // Ação disparada ao clicar para alternar o filtro
+          >
+            {/* Renderiza a caixa com estilo selecionado condicional */}
+            <View style={[styles.checkbox, onlyWithoutPrice && styles.checkboxSelected]}>
+              {/* Exibe o o check de verificação se o filtro estiver ativo */} 
+              {onlyWithoutPrice && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            {/* Exibe o texto identificação da função */}
+            <Text style={styles.checkboxLabel}>Exibir produtos sem valor</Text>
+          </TouchableOpacity>
           {/* Botões de ação */}
           <View style={styles.modalButtonsRow}>
             {/* Botão aplica a busca na lista dos registros cadastrado */}
@@ -189,23 +227,23 @@ export function BuyEditModal({
             {/* Caixa de texto para editar a quantidade */}
             <Text style={styles.inputLabel}>Quantidade:</Text>
             <TextInput
-              style={styles.editModalInput}
-              placeholder="Quantidade"
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              selectTextOnFocus
-              autoFocus
+              style={styles.editModalInput} // Aplica a estilização visual do campo de entrada
+              placeholder="Quantidade"      // Exibe o texto de dica caso o campo esteja vazio
+              value={quantity}              // Associa o valor atual da quantidade ao estado
+              onChangeText={setQuantity}    // Atualiza o estado da quantidade ao digitar
+              keyboardType="numeric"        // Exibe o teclado numérico para facilitar a digitação
+              selectTextOnFocus             // Seleciona todo o texto do campo ao receber o foco
+              autoFocus                     // Foca o campo e abre o teclado automaticamente
             />
           {/* Caixa de texto para editar o valor */}
           <Text style={styles.inputLabel}>Valor unitário R$: </Text>
           <TextInput
-            style={styles.editModalInput}
-            placeholder="0.00"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            selectTextOnFocus
+            style={styles.editModalInput} // Aplica a estilização visual do campo de entrada
+            placeholder="0.00"            // Exibe o formato padrão de valor caso o campo esteja vazio
+            value={price}                 // Associa o valor atual do preço ao estado
+            onChangeText={setPrice}       // Atualiza o estado do preço ao digitar
+            keyboardType="decimal-pad"    // Exibe o teclado numérico com ponto/vírgula decimal
+            selectTextOnFocus             // Seleciona todo o texto do campo ao receber o foco
           />
           {/* Botões de ação */}
           <View style={styles.modalButtonsRow}>
@@ -336,12 +374,12 @@ export function BuySearchModal({
           <Text style={styles.modalTitle}>Buscar Produto por Nome</Text>
           {/* Caixa de texto para pesquisar o produto*/}
           <TextInput
-            style={styles.input}
-            placeholder="Digite o nome do produto..."
-            placeholderTextColor="#888"
-            value={searchText}
-            onChangeText={onChangeSearchText}
-            autoFocus
+            style={styles.input}                      // Aplica a estilização visual do campo de busca
+            placeholder="Digite o nome do produto..." // Exibe a mensagem de instrução quando o campo está vazio
+            placeholderTextColor="#888"             // Define a cor cinza para o texto de instrução
+            value={searchText}                        // Vincula o termo de busca atual ao estado
+            onChangeText={onChangeSearchText}         // Atualiza o estado da busca ao digitar o texto
+            autoFocus                                 // Foca o campo e abre o teclado automaticamente
           />
           {/* Lista (FlatList) dos registros pesquisados */}
           <FlatList
