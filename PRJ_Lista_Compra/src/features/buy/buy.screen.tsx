@@ -44,8 +44,6 @@ export default function BuyScreen(){
   const [showSearchModal, setShowSearchModal] = useState(false);
   // Controla a visibilidade do modal de seleção de mercado para finalizar compra
   const [showFinishModal, setShowFinishModal] = useState(false);
-  //
-  const [onlyWithoutPrice, setOnlyWithoutPrice] = useState(false);
 
   /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
 

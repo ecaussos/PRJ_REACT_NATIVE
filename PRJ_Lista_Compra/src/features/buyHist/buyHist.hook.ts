@@ -4,6 +4,16 @@ import { Alert } from 'react-native';
 import { BuyHistModel, BuyHistModelInstance } from './buyHist.model';
 import { BuyHistIntent, BuyHistState } from './buyHist.types';
 
+
+export const formatToBRDate = (dateBuy: string): string => {
+  if (!dateBuy) return '';
+  // Garante que se vier só YYYY-MM-DD, adicione o horário UTC completo
+  const formattedInput = dateBuy.length === 10 ? `${dateBuy}T00:00:00Z` : dateBuy;
+  const date = new Date(formattedInput);
+  if (isNaN(date.getTime())) return dateBuy; // Retorna o texto original se a data for inválida
+  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(date);
+};
+
 export function useBuyHistViewModel(model: BuyHistModel = BuyHistModelInstance) {
   // Estado centralizado de carregamento, erros e lista
   const [state, setState] = useState<BuyHistState>({
@@ -24,7 +34,9 @@ export function useBuyHistViewModel(model: BuyHistModel = BuyHistModelInstance) 
   const [editingId, setEditingId] = useState<number | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
   const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca de produto código/nome
+  const [selectedGroup, setSelectedGroup] = useState<string>('');                   // Armazena o nome do grupo selecionado no filtro
   const [selectedSupplier, setSelectedSupplier] = useState<string>('');             // Armazena o nome do fornecedor selecionado no filtro
+  const [selectedDate, setSelectedDate] = useState('');                                   // Armazena a data inicio para o filtro
 
   // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
@@ -38,8 +50,10 @@ export function useBuyHistViewModel(model: BuyHistModel = BuyHistModelInstance) 
 
   // Função para limpar explicitamente todos os filtros
   const handleClearFilters = useCallback(() => {
-    setSearchText('');          // Reseta a busca por texto do nome do produto
-    setSelectedSupplier('');    // Reseta a seleção do grupo no filtro
+    setSearchText('');        // Reseta a busca por texto do nome do produto
+    setSelectedGroup('');     // Reseta a seleção do grupo no filtro
+    setSelectedSupplier('');  // Reseta a seleção do fornecedor no filtro
+    setSelectedDate('');      // Reseta a data no filtro
   }, []);
 
   // Processador de intenções da interface (MVI)  
@@ -158,6 +172,7 @@ try {
   }, [dispatch]);                               // Garante reexecução caso dispatch seja alterado
 
    // Função para filtrar a lista de registros cadastrados
+  
   const filteredItems = state.items.filter(item => {
     // Converte o texto digitado para minúsculas e remove espaços
     const searchLower = searchText.toLowerCase().trim(); 
@@ -166,17 +181,47 @@ try {
     const matchText = !searchLower || matchName;
     // 2. Validação do Grupo selecionado no ListBox
     const matchSupplierSelect = selectedSupplier ? item.nm_supplier === selectedSupplier : true;
-    // Retorna verdadeiro se houver correspondência no nome ou no grupo
-    return matchText && matchSupplierSelect;
+    // 3. Validação do Grupo selecionado no ListBox
+    const matchGroupSelect = selectedGroup ? item.nm_group === selectedGroup : true;
+    // 4.  Data da Compra (Garante comparação no formato YYYY-MM-DD)
+    const itemFormattedDate = item.dt_hist_buy ? formatToBRDate(item.dt_hist_buy) : '';
+    const matchesDate = selectedDate && selectedDate !== ''
+      ? itemFormattedDate === selectedDate
+      : true;
+     // Retorna verdadeiro se houver correspondência no nome, grupo, fornecedor ou data
+    return matchText && matchGroupSelect  && matchSupplierSelect && matchesDate;
   });
 
-  // Filtra o registro dos fornecedores presentes no histórico compra
+  // Filtrar o registro dos grupos presentes no histórico compra
+  const availableGroups = useMemo(() => {                                         // Memoiza a lista de grupos para evitar reprocessamento desnecessário
+    const groups = state.items                                                    // Mapeia a lista de itens da compra
+      .map(item => item.nm_group)                                                 // Extrai apenas os nomes dos grupos de cada item
+      .filter((group): group is string => Boolean(group && group.trim() !== '')); // Remove valores nulos, indefinidos ou em branco
+    return Array.from(new Set(groups));                                           // Converte para um Set para remover os nomes duplicados
+  }, [state.items]);                                                              // Recalcula apenas quando a lista de itens for alterada
+
+  // Filtrar o registro dos fornecedores presentes no histórico compra
   const availableSupplier = useMemo(() => {                                                   // Memoiza a lista de grupos para evitar reprocessamento desnecessário
     const suppliers = state.items                                                             // Mapeia a lista de itens da compra
       .map(item => item.nm_supplier)                                                          // Extrai apenas os nomes dos grupos de cada item
       .filter((supplier): supplier is string => Boolean(supplier && supplier.trim() !== '')); // Remove valores nulos, indefinidos ou em branco
     return Array.from(new Set(suppliers));                                                    // Converte para um Set para remover os nomes duplicados
   }, [state.items]);                                                                          // Recalcula apenas quando a lista de itens for alterada
+
+  // Filtrar o registro por data presentes no histórico compra
+  // Extrai as datas únicas que realmente existem nas compras
+  const availableDates = useMemo(() => {
+    const dates = state.items
+      .map(item => item.dt_hist_buy ? formatToBRDate(item.dt_hist_buy) : '')
+      .filter((date): date is string => Boolean(date));
+
+    //Remove duplicados e ordena de forma descendente (mais recentes primeiro)
+    return Array.from(new Set(dates)).sort((a, b) => {
+      const [dayA, monthA, yearA] = a.split('/');
+      const [dayB, monthB, yearB] = b.split('/');
+      return new Date(`${yearB}-${monthB}-${dayB}`).getTime() - new Date(`${yearA}-${monthA}-${dayA}`).getTime();
+    });
+    }, [state.items]);
 
   // Função de edição para preencher campos do formulário
   const startEditing = (id: number, product: number, quantity: number, price: number, supplier?: number | null) => {
@@ -217,11 +262,22 @@ try {
       setPrice,                       // Função para alterar o preço
       supplierId,                     // ID do fornecedor selecionado
       setSupplierId,                  // Função para alterar o fornecedor
+      // Filtro por nome
+      searchText,                     // Texto de busca da lista principal
+      setSearchText,                  // Função para alterar o texto de busca principal
+      // Filtra por grupo
+      selectedGroup,                  // Nome do grupo atualmente selecionado no filtro
+      setSelectedGroup,               // Função para atualizar o grupo selecionado
+      availableGroups,                // Lista com os nomes dos grupos disponíveis para seleção
+      // Filtra por fornecedor
       selectedSupplier,               // Nome do fornecedor atualmente selecionado no filtro
       setSelectedSupplier,            // Função para atualizar o fornecedor selecionado
       availableSupplier,              // Lista com os nomes dos fornecedor disponíveis para seleção
-      searchText,                     // Texto de busca da lista principal
-      setSearchText,                  // Função para alterar o texto de busca principal
+      // Filtra por data
+      selectedDate,                   // Data selecionada no filtro
+      setSelectedDate,                // Altera a data selecionada
+      availableDates,                 // Lista de datas disponíveis extraídas
+
       modalSearchText,                // Texto de busca do modal
       setModalSearchText,             // Função para alterar o texto de busca do modal
       handleClearFilters,             // Função para resetar todos os parâmetros de filtragem

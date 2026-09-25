@@ -22,7 +22,7 @@ export function BuyHistActions({
         {/* Botão Adicionar - Abre modal com as opções para adicionar produto */}
         <TouchableOpacity style={styles.actionButton} onPress={onOpenDeleteModal}>
           {/* texto do botão */}
-          <Text style={styles.buttonText}>📂 Excluir </Text>
+          <Text style={styles.buttonText}>🗑 Excluir </Text>
         </TouchableOpacity>
         {/* Botão Pesquisar - Abre modal Busca */}
         <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#6c757d' }]} onPress={onOpenFilterModal}>
@@ -51,10 +51,18 @@ export function BuyHistFilterModal({
   // Filtrar por nome
   searchText,               // Texto atual exibido no campo de entrada de busca
   onChangeSearchText,       // Função chamada ao digitar um texto na caixa de pesquisa
+   // Filtrar por Grupo
+  selectedGroup,            // Nome do grupo atualmente selecionado para filtragem
+  onChangeSelectedGroup,    // Função para atualizar o grupo selecionado
+  availableGroups,          // Lista com os nomes dos grupos disponíveis para seleção
   // Filtrar por fornecedor
   selectedSupplier,         //
-  availableSupplier,        //
   onChangeSelectedSupplier, //
+  availableSupplier,        //
+  // Filtro por data
+  selectedDate,             //
+  onChangeSelectedDate,     //
+  availableDates,           //
   // Ações
   onClose,                  // Ação para fehcar o modal
   onCancel,                 // Ação de limpar e fechar o modal
@@ -79,6 +87,23 @@ export function BuyHistFilterModal({
             // Foca automaticamente a caixa de texto 
             autoFocus
           />
+          {/* FILTRA PRODUTO POR GRUPO - Listbox com os grupos dos produtor  */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              // Define o grupo selecionado no componente
+              selectedValue={selectedGroup}
+              // Atualiza o grupo selecionado ao alterar o item
+              onValueChange={(itemValue: string) => onChangeSelectedGroup(itemValue)}
+            >
+              {/* Opção padrão para exibir todos os grupos */}
+              <Picker.Item label="Busca por Grupo" value="" />
+              {/* Percorre a lista de grupos disponíveis */}
+              {availableGroups.map((group) => (
+                // Apresenta cada grupo como opção da seleção
+                <Picker.Item key={group} label={group} value={group} />
+              ))}
+            </Picker>
+          </View>
           {/* FILTRA POR FORNECEDOR - Listbox com os fornecedores */}
           <View style={styles.pickerContainer}>
             <Picker
@@ -91,11 +116,29 @@ export function BuyHistFilterModal({
               <Picker.Item label="Busca por Fornecedor" value="" />
               {/* Percorre a lista de fornecedores disponíveis */}
               {availableSupplier.map((supplier) => (
-                // Apresenta cada grupo como opção da seleção
+                // Apresenta cada fornecedor como opção da seleção
                 <Picker.Item key={supplier} label={supplier} value={supplier} />
               ))}
             </Picker>
-          </View>          
+          </View>
+          {/* FILTRAR POR DATA - Listbox com a data*/}
+          <View style={styles.pickerContainer}>
+            <Picker
+              // Define a data selecionado no componente
+              selectedValue={selectedDate}
+              // Atualiza a data selecionado ao alterar o item
+              onValueChange={(itemValue) => onChangeSelectedDate(itemValue)}
+            >
+              {/* Opção padrão para exibir todas as datas */}
+              <Picker.Item label="Busca por Datas" value="" />
+              {/* Percorre a lista de fornecedores disponíveis */}
+              {availableDates.map((date) => (
+                // Apresenta cada data como opção da seleção
+                <Picker.Item key={date} label={date} value={date} 
+                />
+              ))}
+            </Picker>
+          </View>
           {/* Botões de ação */}
           <View style={styles.modalButtonsRow}>
             {/* Botão aplica a busca na lista dos registros cadastrado */}

@@ -63,7 +63,7 @@ export const styles = StyleSheet.create({
     gap: 10,
   },
   actionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#ff0000',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,

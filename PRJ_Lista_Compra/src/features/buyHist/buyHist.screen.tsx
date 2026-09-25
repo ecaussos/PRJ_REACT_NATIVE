@@ -67,7 +67,9 @@ export default function BuyHistScreen() {
         onClearSearch={form.handleClearFilters}             // Ação do botão para limpar a filtragem de registro atual
         hasActiveSearch={                                   // Propriedade booleana que define se existe algum filtro ativo
           form.searchText.length > 0 ||                     // Verifica se há texto digitado no campo de busca
-          form.selectedSupplier.length > 0                  // Verifica se algum grupo está selecionado
+          form.selectedGroup.length > 0 ||                  // Verifica se algum grupo está selecionado
+          form.selectedSupplier.length > 0 ||               // Verifica se algum fornecedor está selecionado
+          form.selectedDate.length > 0                      // Verifica se alguma data está selecionado
         }   
       />
       {/* Caixa de texto para pesquisar produtos na lista */}
@@ -120,18 +122,28 @@ export default function BuyHistScreen() {
       )}
       {/* 1. Modal para filtrar/localizar registros cadastrados */}
       <BuyHistFilterModal
-        visible={showFilterModal}                 // Passa o estado que controla a exibição da busca
-        searchText={form.searchText}              // Passa o texto atual digitado para o filtro
-        onChangeSearchText={form.setSearchText}   // Passa a função que atualiza o texto do filtro
+        visible={showFilterModal}                           // Passa o estado que controla a exibição da busca
+        searchText={form.searchText}                        // Passa o texto atual digitado para o filtro
+        onChangeSearchText={form.setSearchText}             // Passa a função que atualiza o texto do filtro
+        // Filtrar produto por grupo
+        selectedGroup={form.selectedGroup}                  // Nome do grupo atualmente selecionado para o filtro
+        onChangeSelectedGroup={form.setSelectedGroup}       // Função para atualizar a seleção do grupo
+        availableGroups={form.availableGroups}              // Lista com os nomes dos grupos disponíveis para seleção
         // Filtrar histório por fonecedor
         selectedSupplier={form.selectedSupplier}            // Nome do fornecedor atualmente selecionado para o filtro
         onChangeSelectedSupplier={form.setSelectedSupplier} // Função para atualizar a seleção do fornecedores
         availableSupplier={form.availableSupplier}          // Lista com os nomes dos fornecedores disponíveis para seleção
+        // Filtrar por data
+        selectedDate={form.selectedDate}                    // Data atualmente selecionado para o filtro
+        onChangeSelectedDate={form.setSelectedDate}         // Daata para atualizar a seleção de data
+        availableDates={form.availableDates}                // Lista com as datas disponíveis para seleção      
         // Botões
         onClose={() => setShowFilterModal(false)}           // Passa a função para fechar o modal/campo de busca
         onCancel={() => {                                   // Passa a função quando cancela a pesquisa/filtragem
-          form.setSearchText('');                           // Limpa o texto pesquisado
-          form.setSelectedSupplier('');
+          form.setSearchText('');                           // Limpa o filtro por nome
+          form.setSelectedGroup('');                        // limpa o filtro por grupo          
+          form.setSelectedSupplier('');                     // limpa o filtro por fornecedor
+          form.setSelectedDate('');                         // Limpa o filtro por data
           setShowFilterModal(false);                        // Esconde o modal
         }}
       />

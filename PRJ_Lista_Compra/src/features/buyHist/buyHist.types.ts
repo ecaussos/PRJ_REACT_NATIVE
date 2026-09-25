@@ -34,10 +34,18 @@ export interface BuyHistFilterProps {
   searchText: string;                                   // Texto atual digitado no campo de busca
   // Filtro por Nome
   onChangeSearchText: (text: string) => void;           // Evento disparado ao alterar o texto de busca
+  // Filtro por Grupo
+  selectedGroup: string;                                // Nome do grupo selecionado para a filtragem
+  onChangeSelectedGroup: (group: string) => void;       // Função para atualizar a seleção do grupo
+  availableGroups: string[];                            // Lista de nomes de grupos disponíveis para seleção
   // Filtro por fornecedor
-  selectedSupplier: string;                             //  
-  onChangeSelectedSupplier: (supplier: string) => void; //
-  availableSupplier: string[];                          //
+  selectedSupplier: string;                             // Nome do fornecedor selecionado para a filtragem
+  onChangeSelectedSupplier: (supplier: string) => void; // Função para atualizar a seleção do fornecedor
+  availableSupplier: string[];                          // Lista de nomes de fornecedores disponíveis para seleção
+  // Filtro por data (Início e Fim)
+  selectedDate: string;                                // Data selecionada no formato DD/MM/YYYY
+  onChangeSelectedDate: (date: string) => void;        // Evento de alteração
+  availableDates: string[];                            // Lista de datas extraídas do histórico
   // Ações
   onClose: () => void;                                  // Ação de confirmar/aplicar a busca e fechar
   onCancel: () => void;                                 // Ação de cancelar e restaurar a lista
