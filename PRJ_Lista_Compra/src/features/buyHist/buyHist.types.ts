@@ -9,22 +9,16 @@ export type BuyHist = BuyHistEntity;
 export type BuyHistItem = BuyHistWithEntity;
 
 // Reexporta a entidade SupplierEntity para consumo na UI sem conflito de declaração local
-export type { SupplierEntity };
-
-export interface BuyHistSearchResult {
-  id_buy_hist: number;
-  id_product?: number;
-  nm_product?: string;
-  id_group?: number;
-  nm_group?: string;
-  quantity: number;
-  price?: number | null;
-  id_supplier?: number;
-  nm_supplier?: string;
-  dt_buy?: string;
-}
+export type SupplierOption = Pick<SupplierEntity, 'id_supplier' | 'nm_supplier'>;
 
 // -------- Interfaces de Componentes de UI (Props) - Utilizados pelo Form  -------- //
+
+export interface BuyHistSearchResult {
+  id_product: number;   // ID único do produto
+  nm_product: string;   // Nome do produto
+  nm_group?: string;    // Nome da categoria/grupo do produto
+  vl_product?: number;  // Preço médio ou cadastrado do produto
+}
 
 // Props para as ações principais (Cadastrar, Filtrar e Limpar)
 export interface BuyHistActionsProps {
@@ -32,16 +26,21 @@ export interface BuyHistActionsProps {
   onOpenFilterModal: () => void;  // Ação para abrir o modal de filtro
   onClearSearch: () => void;      // Ação para limpar a busca atual
   hasActiveSearch: boolean;       // Flag indicando se existe uma busca aplicada
-  onClearList?: () => void;       // Ação para limpar toda a lista
 }
 
 // Props do Modal de filtragem seleção de item na lista (FlatList)
 export interface BuyHistFilterProps {
-  visible: boolean;                           // Controla a visibilidade do modal de busca
-  searchText: string;                         // Texto atual digitado no campo de busca
-  onChangeSearchText: (text: string) => void; // Evento disparado ao alterar o texto de busca
-  onClose: () => void;                        // Ação de confirmar/aplicar a busca e fechar
-  onCancel: () => void;                       // Ação de cancelar e restaurar a lista
+  visible: boolean;                                     // Controla a visibilidade do modal de busca
+  searchText: string;                                   // Texto atual digitado no campo de busca
+  // Filtro por Nome
+  onChangeSearchText: (text: string) => void;           // Evento disparado ao alterar o texto de busca
+  // Filtro por fornecedor
+  selectedSupplier: string;                             //  
+  onChangeSelectedSupplier: (supplier: string) => void; //
+  availableSupplier: string[];                          //
+  // Ações
+  onClose: () => void;                                  // Ação de confirmar/aplicar a busca e fechar
+  onCancel: () => void;                                 // Ação de cancelar e restaurar a lista
 }
 
 // Props para a exibição de cada item da Lista de registros cadastrados
@@ -56,20 +55,21 @@ export interface BuyHistItemProps {
 // Estado centralizado retornado pelo Hook
 export interface BuyHistState {
   items: BuyHistWithEntity[];         // Lista principal de itens do histórico
+  suppliers: SupplierOption[];        // Lista os fornecedores cadastrados
   searchResults: BuyHistWithEntity[]; // Resultados filtrados na pesquisa
-  totalRecords: number;                  // Total de registro cadastrados
+  totalRecords: number;               // Total de registro cadastrados
   loading: boolean;                   // Indicador de carregamento da tela/operações
   error: string | null;               // Mensagem de erro, se houver
 }
 
 // Intenções (MVI) aceitas pelo dispatch do ViewModel
 export type BuyHistIntent =
-  | { type: 'LOAD' }                                                                                                  // Intenção para carregar
-  | { type: 'UPDATE'; payload: { // Intenção para atualizar 
-      id_hist_buy: number;
-      id_product: number;
-      qt_product: number;
-      vl_product: number;
-      id_supplier: number;
+  | { type: 'LOAD' }                    // Intenção para carregar registros                                                                                               // Intenção para carregar
+  | { type: 'UPDATE'; payload: {        // Intenção para atualizar registro
+      id_hist_buy: number;              // ID único do histórico
+      id_product: number;               // ID único do produto
+      qt_product: number;               // Quantidade de produto comprado
+      vl_product: number;               // Valor pago pelo produto
+      id_supplier: number;              // ID único do fornecedor
     } }
-  | { type: 'DELETE'; payload: number }                                                                               // Intenção para excluir
+  | { type: 'DELETE'; payload: number } // Intenção para excluir

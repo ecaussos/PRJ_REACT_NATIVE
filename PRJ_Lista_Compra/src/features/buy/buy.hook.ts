@@ -407,7 +407,7 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
     return matchText && matchPriceFilter && matchGroupSelect;
   });
 
-  // Filtra o registro os grupos presentes na compra
+// Filtra o registro os grupos presentes na compra
 const availableGroups = useMemo(() => {                                           // Memoiza a lista de grupos para evitar reprocessamento desnecessário
     const groups = state.items                                                    // Mapeia a lista de itens da compra
       .map(item => item.nm_group)                                                 // Extrai apenas os nomes dos grupos de cada item

@@ -65,12 +65,14 @@ export class BuyListRepository implements IBuyListRepository {
       const db = await getDBConnection();
       const query = `
         SELECT 
-          id_product, 
-          nm_product, 
-          cd_product_gtin
-        FROM product
-        WHERE nm_product LIKE ?
-        ORDER BY nm_product ASC;
+          p.id_product, 
+          p.nm_product,
+          p.cd_product_gtin,
+          g.nm_group
+        FROM product p
+        LEFT JOIN group_product g ON p.id_group = g.id_group
+        WHERE p.nm_product LIKE ?
+        ORDER BY p.nm_product ASC;
       `;
       const searchName = `%${nm_product.trim()}%`;
       return await db.getAllAsync<ProductSearchResult>(query, [searchName]);

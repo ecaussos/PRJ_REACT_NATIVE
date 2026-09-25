@@ -2,12 +2,13 @@
 import { BuyHistWithEntity } from '../../data/entities/buyHist.entity';
 import { IBuyHistRepository } from '../../data/interfaces/buyHist.repository.interfaces';
 import { BuyHistRepository } from '../../data/repositories/buyHist.repository';
-import { BuyHistIntent, BuyHistItem, BuyHistSearchResult } from './buyHist.types';
+import { BuyHistIntent, BuyHistItem, SupplierOption } from './buyHist.types';
 
 
 // Contrato/Interface da Model
 export interface IBuyHistModel {
-  fetchAll(): Promise<BuyHistWithEntity[]>;                                                      // Busca todos os itens da lista de compras
+  fetchAll(): Promise<BuyHistWithEntity[]>;                                                    // Busca todos os itens da lista de compras
+  fetchSupplier(): Promise<SupplierOption[]>;
   update(id_hist_buy: number, id_product:number, qt_product: number, vl_product: number, id_supplier: number): Promise<void>; // Atualiza a quantidade e valor de um item na lista
   delete(id_hist_buy: number): Promise<void>;                                                           // Remove um item específico da compra
 }
@@ -15,17 +16,17 @@ export interface IBuyHistModel {
 export class BuyHistModel implements IBuyHistModel {
   // Recebe o repositório por contrato (interface), facilitando testes e inversão de controle
   constructor(private repository: IBuyHistRepository) {} // Define a dependência por interface no construtor
-  fetchByName(name: string): Promise<BuyHistSearchResult[]> {
-    throw new Error('Method not implemented.');
-  }
-  searchProducts(query: string): Promise<BuyHistSearchResult[]> {
-    throw new Error('Method not implemented.');
-  }
 
   // Busca todos os registros com dados detalhados
   async fetchAll(): Promise<BuyHistWithEntity[]> {
-      return await this.repository.findAll();  // Executa a busca no repositório
-    }
+    // Executa a busca no repositório  
+    return await this.repository.findAll();
+  }
+  // Busca todos os fornecedores cadastrados
+  async fetchSupplier(): Promise<SupplierOption[]>{
+    // Executa a busca no repositório
+    return await this.repository.findSupplier(); 
+  }
 
   // Atualiza a quantidade de um item existente na lista
   async update(id_hist_buy: number, id_product: number, qt_product: number, vl_product: number, id_supplier: number): Promise<void> {
@@ -48,11 +49,11 @@ export class BuyHistModel implements IBuyHistModel {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('O valor deve ser um número maior ou igual a zero.');
     }
+    // Valida se não existe dado preenchido e for menor que zero - ID fornecedor
     if (!id_supplier || id_supplier <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um registro válido.');
     }
-    
     // Executa a atualização no repositório
     await this.repository.update(id_hist_buy, id_product, qt_product, vl_product, id_supplier);
   }
@@ -87,7 +88,7 @@ export class BuyHistModel implements IBuyHistModel {
     const validProduct = Number(productId) > 0;                   // Valida se o ID do produto é maior ou igual a zero
     const validQty = Number(quantity) > 0;                        // Valida se a quantidade é maior que zero 
     const validPrc = Number(price) >= 0;                          // Valida se o preço é maior ou igual a zero
-    const validSupplier = Number(supplierId) >= 0;                  // Valida se o preço é maior ou igual a zero
+    const validSupplier = Number(supplierId) > 0;                  // Valida se o preço é maior ou igual a zero
     return validProduct && validQty && validPrc && validSupplier; // Retorna true somente se todas as regras forem satisfeitas
   }
 
@@ -128,11 +129,11 @@ export class BuyHistModel implements IBuyHistModel {
     isEditing: boolean,           // Indica se o modal é de edição (true) ou novo cadastro (false)
     editingId: number | null      // Indica se há ou não um valor (ID)
   ): BuyHistIntent {
-    const parsedProduct = Number(id_product);        // Converte o ID para número
+    const parsedProduct = Number(id_product);   // Converte o ID para número
     const parsedQuantity = Number(qt_product);  // Converte a quantidade para número
     const parsedPrice = Number(vl_product);     // Converte o preço para número
     const parsedSupplier = Number(id_supplier); // Converte o ID para número
-        // Verificar se o valor é true e diferente de null - SE Edição=True OU SE houver um ID 
+    // Verificar se o valor é true e diferente de null - SE Edição=True OU SE houver um ID 
     if (isEditing && editingId !== null) {
       // Verdadeiro: Identifica que é uma edição
       return {

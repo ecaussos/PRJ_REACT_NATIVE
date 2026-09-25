@@ -1,6 +1,6 @@
 // src/features/buyHist/buyHist.repository.ts
 import { getDBConnection } from '../../core/database/sqliteclient';
-import { BuyHistWithEntity } from '../entities/buyHist.entity';
+import { BuyHistWithEntity, SupplierOption } from '../entities/buyHist.entity';
 
 export class BuyHistRepository {
   // Consulta todos os registros de histórico realizando JOINs para obter nomes de produto, grupo e fornecedor
@@ -31,6 +31,27 @@ export class BuyHistRepository {
     }
   }
 
+  async findSupplier(): Promise<SupplierOption[]> {
+    try {
+    const db = await getDBConnection();
+    const query = `
+      SELECT 
+        id_supplier,
+        nm_supplier
+      FROM supplier
+      ORDER BY nm_supplier DESC;
+    `;
+      const result = await db.getAllAsync<SupplierOption>(query);
+      console.log("=== [SQL LOG] FORNECEDORES NO BANCO ===", JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      throw new Error(`Erro ao buscar fornecedores da compra: ${error.message}`);
+    }
+  }
+
+
+
+  
   // Atualizar a quantidade e o valor de um item existente
   async update(id_hist_buy: number, id_product: number, qt_product: number, vl_product: number, id_supplier: number): Promise<void> {
     try {

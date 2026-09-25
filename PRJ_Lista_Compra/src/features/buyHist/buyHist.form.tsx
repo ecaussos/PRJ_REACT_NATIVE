@@ -48,8 +48,14 @@ export function BuyHistActions({
 // Função para apresentar o modal Filtro/Busca
 export function BuyHistFilterModal({
   visible,                  // Estado que controla a visibilidade do modal
+  // Filtrar por nome
   searchText,               // Texto atual exibido no campo de entrada de busca
   onChangeSearchText,       // Função chamada ao digitar um texto na caixa de pesquisa
+  // Filtrar por fornecedor
+  selectedSupplier,         //
+  availableSupplier,        //
+  onChangeSelectedSupplier, //
+  // Ações
   onClose,                  // Ação para fehcar o modal
   onCancel,                 // Ação de limpar e fechar o modal
 }: BuyHistFilterProps){
@@ -64,7 +70,7 @@ export function BuyHistFilterModal({
           {/* Caixa de texto para busca na lista */}
           <TextInput
             style={styles.input}
-            placeholder="Digite para filtrar em tempo real..."
+            placeholder="Digite o nome do produto"
             placeholderTextColor="#888"
             // Obtem o texto digitado
             value={searchText}
@@ -73,6 +79,23 @@ export function BuyHistFilterModal({
             // Foca automaticamente a caixa de texto 
             autoFocus
           />
+          {/* FILTRA POR FORNECEDOR - Listbox com os fornecedores */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              // Define o fornecedor selecionado no componente
+              selectedValue={selectedSupplier}
+              // Atualiza o fornecedor selecionado ao alterar o item
+              onValueChange={(itemValue: string) => onChangeSelectedSupplier(itemValue)}
+            >
+              {/* Opção padrão para exibir todos os fornecedores */}
+              <Picker.Item label="Busca por Fornecedor" value="" />
+              {/* Percorre a lista de fornecedores disponíveis */}
+              {availableSupplier.map((supplier) => (
+                // Apresenta cada grupo como opção da seleção
+                <Picker.Item key={supplier} label={supplier} value={supplier} />
+              ))}
+            </Picker>
+          </View>          
           {/* Botões de ação */}
           <View style={styles.modalButtonsRow}>
             {/* Botão aplica a busca na lista dos registros cadastrado */}
@@ -141,6 +164,7 @@ export function BuyHistItemModal({
           <Text style={styles.details}>Quantidade: {quantity ?? 'Não informado'}</Text>
           <Text style={styles.details}>Valor: {formattedPrice}</Text>
           <Text style={styles.details}>Fornecedor: {supplierName ? supplierName : (supplierId ? `ID: ${supplierId}` : 'Sem fornecedor')}</Text>
+          <Text style={styles.details}>Data: {dateBuy ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(dateBuy)) : ''}</Text>
         </View>
         {/* Botões de ação */}
         <View style={styles.actionButtonsContainer}>
@@ -168,24 +192,25 @@ export function BuyHistEditModal({
   setQuantity,    // Função parar atualizar a quantidade
   price,          // Valor do preço
   setPrice,       // Função para atualizar o preço
-  supplierId,       // Valor do campo fornecedor 
-  setSupplierId,    // Função para atualizar o fornecedor
-  suppliers = [], //
+  supplierId,     // Valor do campo fornecedor 
+  setSupplierId,  // Função para atualizar o fornecedor
+  suppliers = [], // Lista os fornecedores cadastrados
   onSave,         // Ação de salvar o formulário
   onCancel,       // Ação de cancelar/fechar o formulário
 }: {
-  showModal: boolean;                   // Controla a exibição visual do modal
-  name: string;                         // Texto do campo nome do produto
-  quantity: string;                     // Texto do campo quantidade
-  setQuantity: (text: string) => void;  // Callback de atualização do nome
-  price: string;                        // Texto do campo preço
-  setPrice: (text: string) => void;     // Callback de atualização do preço
+  showModal: boolean;                     // Controla a exibição visual do modal
+  name: string;                           // Texto do campo nome do produto
+  quantity: string;                       // Texto do campo quantidade
+  setQuantity: (text: string) => void;    // Callback de atualização do nome
+  price: string;                          // Texto do campo preço
+  setPrice: (text: string) => void;       // Callback de atualização do preço
   supplierId: string;                     // Valor do campo fornecedor 
   setSupplierId: (text: string) => void;  // Função para atualizar o fornecedor
-  suppliers?: SupplierOption[];         // Coleção opcional com a lista de grupos
-  isEditing?: boolean;                  // Flag indicadora do modo de edição
-  onSave: () => void;                   // Executado ao confirmar o salvamento
-  onCancel: () => void;                 // Executado ao descartar ou fechar
+  suppliers?: SupplierOption[];           // Coleção opcional com a lista de grupos
+  isEditing?: boolean;                    // Flag indicadora do modo de edição
+  onSave: () => void;                     // Executado ao confirmar o salvamento
+  onCancel: () => void;                   // Executado ao descartar ou fechar
+  
 }) {
   // -------- MONTAGEM DO FORMULÁRIO NA TELA -------- //
   return (
@@ -204,36 +229,37 @@ export function BuyHistEditModal({
           <Text style={styles.inputLabel}>Quantidade:</Text>
           <TextInput
             style={styles.editModalInput}
-            placeholder="Quantidade"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="numeric"
-            selectTextOnFocus
-            autoFocus
+            placeholder="Quantidade"    // Texto de dica quando vazio
+            value={quantity}            // Valor exibido no campo
+            onChangeText={setQuantity}  // Atualiza o estado ao digitar
+            keyboardType="numeric"      // Exibe o teclado numérico
+            selectTextOnFocus           // Seleciona todo o texto ao focar
+            autoFocus                   // Foca no campo ao abrir o modal
           />
           {/* Caixa de texto para editar o valor */}
           <Text style={styles.inputLabel}>Valor unitário R$: </Text>
           <TextInput
             style={styles.editModalInput}
-            placeholder="0.00"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            selectTextOnFocus
+            placeholder="0.00"          // Texto de dica com formato padrão
+            value={price}               // Valor exibido no campo
+            onChangeText={setPrice}     // Atualiza o estado ao digitar
+            keyboardType="decimal-pad"  // Exibe o teclado numérico com ponto/vírgula
+            selectTextOnFocus           // Seleciona todo o texto ao focar
           />
           {/* Caixa de Seleção (Dropdown) para vínculo com Grupo de Produtos */}
           <Text style={styles.inputLabel}>Fornecedor:</Text>
           <View style={styles.pickerContainer}>
             <Picker
-              selectedValue={supplierId}
-              onValueChange={(itemValue) => setSupplierId(itemValue)}
+              selectedValue={String(supplierId ?? '')}                           // Define a opção selecionada convertida em texto
+              onValueChange={(itemValue) => setSupplierId(String(itemValue))}    // Atualiza o estado ao selecionar uma opção
             >
+              {/*Opção padrão quando nenhum fornecedor está selecionado*/}
               <Picker.Item label="Selecione o Fornecedor... *" value="" />
-              {suppliers?.map((supplier: SupplierOption) => (
-                <Picker.Item 
-                  key={supplier.id_supplier} 
-                  label={supplier.nm_supplier} 
-                  value={String(supplier.id_supplier)} 
+              {suppliers?.map((supplier: SupplierOption) => (                    // Mapeia a lista de fornecedores para criar as opções
+                <Picker.Item
+                  key={supplier.id_supplier}                                     // Chave única de identificação do item na lista
+                  label={supplier.nm_supplier}                                   // Nome do fornecedor exibido na interface
+                  value={String(supplier.id_supplier)}                           // Valor associado convertido em texto para correspondência
                 />
               ))}
             </Picker>

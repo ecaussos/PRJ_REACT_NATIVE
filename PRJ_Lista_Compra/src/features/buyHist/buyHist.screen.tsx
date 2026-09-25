@@ -24,8 +24,6 @@ export default function BuyHistScreen() {
   } = useBuyHistViewModel();
 
 
-  // Controla a visibilidade do modal unificado de adição de produto (Câmera ou Nome)
-  const [showAddModal, setShowAddModal] = useState(false);
   // Controla a visibilidade do modal de filtragem - inicia fechado/oculto
   const [showFilterModal, setShowFilterModal] = useState(false);
   // Controla a visibilidade do modal de Scanner (Adicionar produto) - inicia fechado/oculto
@@ -33,7 +31,11 @@ export default function BuyHistScreen() {
   /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
 
   // Função para realizar a edição do registro
-  const handleOpenEditModal = ( id: number, Product: number, quantity: number, price: number, supplier: number) => {
+  const handleOpenEditModal = ( id: number, Product: number, quantity: number, price: number, supplier?: number | null) => {
+    console.log("=== [ACTION LOG] ABRINDO EDIÇÃO ===");
+    console.log("ID Histórico:", id);
+    console.log("ID Produto:", Product);
+    console.log("ID Fornecedor enviado ao clicar:", supplier);
     form.startEditing(id, Product, quantity, price, supplier); // Preenche o formulário com os dados do registro selecionado
   };
 
@@ -61,9 +63,12 @@ export default function BuyHistScreen() {
       {state.error && <Text style={styles.error}>{state.error}</Text>}
       {/* Botões principais de ação - Adicionar, Filtrar e Limpar */}
       <BuyHistActions
-        onOpenFilterModal={() => setShowFilterModal(true)} // Ação do botão para mostrar modal de filtragem de registro
-        onClearSearch={() => form.setSearchText('')} // Ação do botão para limpar a filtragem de registro atual
-        hasActiveSearch={form.searchText.length > 0} // Passa "true" se houver algum texto digitado na busca
+        onOpenFilterModal={() => setShowFilterModal(true)}  // Ação do botão para mostrar modal de filtragem de registro
+        onClearSearch={form.handleClearFilters}             // Ação do botão para limpar a filtragem de registro atual
+        hasActiveSearch={                                   // Propriedade booleana que define se existe algum filtro ativo
+          form.searchText.length > 0 ||                     // Verifica se há texto digitado no campo de busca
+          form.selectedSupplier.length > 0                  // Verifica se algum grupo está selecionado
+        }   
       />
       {/* Caixa de texto para pesquisar produtos na lista */}
       <Text style={styles.subtitle}>Produtos Comprados</Text>
@@ -77,15 +82,24 @@ export default function BuyHistScreen() {
         renderItem={({ item }) => (
           // Apresenta dados dos registros e botões de ação
           <BuyHistItemModal
-            // Campos utilizando para a listaagem         
-            name={item.nm_product} // Passa o nome do produto cadastrado
-            quantity={item.qt_product} // Passa a quantidade cadastrada
-            price={item.vl_product}// Passa a quantidade cadastrada
-            groupName={item.nm_group ?? undefined} // Passa o nome do grupo retornado pelo JOIN
-            supplierName={item.nm_supplier ?? undefined}
-            dateBuy={item.dt_hist_buy}
-            onEdit={() => handleOpenEditModal(item.id_hist_buy, item.id_product, item.qt_product, item.vl_product ?? 0, item.id_supplier)}
-            onDelete={() => handleDeleteData(item.id_hist_buy, item.nm_product)}
+            // Campos utilizando para a listagem         
+            name={item.nm_product}                        // Passa o nome do produto cadastrado
+            quantity={item.qt_product}                    // Passa a quantidade cadastrada
+            price={item.vl_product}                       // Passa a quantidade cadastrada
+            groupName={item.nm_group ?? undefined}        // Passa o nome do grupo retornado pelo JOIN
+            supplierName={item.nm_supplier ?? undefined}  // Nome do fornecedor (opcional)
+            dateBuy={item.dt_hist_buy}                    // Data de realização da compra
+            onEdit={() => handleOpenEditModal(            // Ação disparada ao clicar para editar
+                item.id_hist_buy,                         // ID do registro de histórico de compra
+                item.id_product,                          // ID do produto vinculado
+                item.qt_product,                          // Quantidade comprada do produto
+                item.vl_product ?? 0,                     // Preço unitário (fallback para zero)
+                item.id_supplier                          // ID do fornecedor vinculado
+              )}
+            onDelete={() => handleDeleteData(             // Ação disparada ao clicar para excluir
+              item.id_hist_buy,                           // ID do registro a ser removido
+              item.nm_product                             // Nome do produto para exibição no alerta
+            )}
           />
         )}
         // Mensagem exibida caso a lista filtrada esteja vazia
@@ -109,10 +123,16 @@ export default function BuyHistScreen() {
         visible={showFilterModal}                 // Passa o estado que controla a exibição da busca
         searchText={form.searchText}              // Passa o texto atual digitado para o filtro
         onChangeSearchText={form.setSearchText}   // Passa a função que atualiza o texto do filtro
-        onClose={() => setShowFilterModal(false)} // Passa a função para fechar o modal/campo de busca
-        onCancel={() => {                         // Passa a função quando cancela a pesquisa/filtragem
-          form.setSearchText('');                 // Limpa o texto pesquisado
-          setShowFilterModal(false);              // Esconde o modal
+        // Filtrar histório por fonecedor
+        selectedSupplier={form.selectedSupplier}            // Nome do fornecedor atualmente selecionado para o filtro
+        onChangeSelectedSupplier={form.setSelectedSupplier} // Função para atualizar a seleção do fornecedores
+        availableSupplier={form.availableSupplier}          // Lista com os nomes dos fornecedores disponíveis para seleção
+        // Botões
+        onClose={() => setShowFilterModal(false)}           // Passa a função para fechar o modal/campo de busca
+        onCancel={() => {                                   // Passa a função quando cancela a pesquisa/filtragem
+          form.setSearchText('');                           // Limpa o texto pesquisado
+          form.setSelectedSupplier('');
+          setShowFilterModal(false);                        // Esconde o modal
         }}
       />
       {/* 2. Modal para editar a quantidade de itens da lista de compra */}
@@ -121,11 +141,12 @@ export default function BuyHistScreen() {
         name={activeEditingItem?.nm_product || ''} // Passa o nome do produto selecionado
         quantity={form.quantity}                   // Valor da quantidade em texto
         setQuantity={form.setQuantity}             // Função para atualizar a quantidade
-        price={form.price}                         // Valor da quantidade em texto
-        setPrice={form.setPrice}
-        supplierId={form.supplierId}
-        setSupplierId={form.setSupplierId}
-        isEditing={form.isEditing}                 // Passa a flag do formulário
+        price={form.price}                         // Valor do preço em texto
+        setPrice={form.setPrice}                   // Função para atualizar o preço
+        supplierId={form.supplierId}               // ID do fornecedor selecionado
+        setSupplierId={form.setSupplierId}         // Função para atualizar o fornecedor
+        suppliers={state.suppliers}                // Lista completa de fornecedores disponíveis
+        isEditing={form.isEditing}                 // Passa a flag de controle de edição
         onSave={handleSave}                        // Função executada ao clicar no botão de salvar
         onCancel={handleCloseForm}                 // Função executada ao cancelar ou fechar o formulário
       />

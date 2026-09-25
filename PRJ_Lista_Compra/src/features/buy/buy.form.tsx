@@ -48,13 +48,17 @@ export function BuyActions({
 // Função para apresentar o modal Filtro/Busca
 export function BuyFilterModal({
   visible,                  // Estado que controla a visibilidade do modal
+  // Filtrar por nome
   searchText,               // Texto atual exibido no campo de entrada de busca
   onChangeSearchText,       // Função chamada ao digitar um texto na caixa de pesquisa
+  // Filtrar sem preço
   onlyWithoutPrice,         // Estado do filtro para itens sem valor/zero
   onToggleOnlyWithoutPrice, // Função para alternar o estado do filtro de preço
+  // Filtrar por Grupo
   selectedGroup,            // Nome do grupo atualmente selecionado para filtragem
   onChangeSelectedGroup,    // Função para atualizar o grupo selecionado
   availableGroups,          // Lista com os nomes dos grupos disponíveis para seleção
+  // Ações
   onClose,                  // Ação para fechar o modal
   onCancel,                 // Ação de limpar e fechar o modal
 }: BuyFilterProps){
