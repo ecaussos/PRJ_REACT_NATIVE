@@ -1,12 +1,19 @@
-// features/quickScanner/scannerQuick.types.ts
+// features/scannerQuick/scannerQuick.types.ts
+import { GeminiProductResult } from '../../core/api/geminiProduct.api';
 
-// Contrato de entrada do componente de tela
 export interface ScannerQuickState {
-  visible: boolean; // Controla se a câmera/modal está ativo
-  loading: boolean; // Indica processamento assíncrono durante a leitura
+  visible: boolean;
+  loading: boolean;
+  // Novos campos para a Modal
+  isConfirmModalOpen: boolean;
+  scannedProduct: GeminiProductResult | null;
+  selectedGroupId: string;
 }
 
-// Intenções MVI suportadas pelo módulo
 export type ScannerQuickIntent =
-  | { type: 'CLOSE' }                           // Intenção de fechar a câmera e voltar de tela
-  | { type: 'SCAN_BARCODE'; payload: string };  // Intenção disparada ao ler um código de barras
+  | { type: 'CLOSE' }
+  | { type: 'SCAN_BARCODE'; payload: string }
+  | { type: 'OPEN_CONFIRM_MODAL'; payload: GeminiProductResult }
+  | { type: 'CLOSE_CONFIRM_MODAL' }
+  | { type: 'UPDATE_SCANNED_PRODUCT'; payload: Partial<GeminiProductResult> }
+  | { type: 'SET_GROUP_ID'; payload: string };

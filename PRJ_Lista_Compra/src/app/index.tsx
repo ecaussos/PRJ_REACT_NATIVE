@@ -61,12 +61,20 @@ export default function Home() {
           </TouchableOpacity>
         </Link>
 
-        {/* Correção: Alterado de "/history" para "/buyHist" */}
+        {/* Botão: Histórico*/}
         <Link href="/buyHist" asChild>
           <TouchableOpacity style={styles.botao}>
             <Text style={styles.textoBotao}>🗂️ Histórico</Text>
           </TouchableOpacity>
         </Link>
+
+        {/* Botão Configuração */}
+        <Link href="/config" asChild>
+          <TouchableOpacity style={styles.botao}>
+            <Text style={styles.textoBotao}>⚙️ Configuração</Text>
+          </TouchableOpacity>
+        </Link>
+
       </View>
     </View>
   )

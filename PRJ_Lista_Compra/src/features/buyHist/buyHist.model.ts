@@ -4,7 +4,6 @@ import { IBuyHistRepository } from '../../data/interfaces/buyHist.repository.int
 import { BuyHistRepository } from '../../data/repositories/buyHist.repository';
 import { BuyHistIntent, BuyHistItem, SupplierOption } from './buyHist.types';
 
-
 // Contrato/Interface da Model
 export interface IBuyHistModel {
   fetchAll(): Promise<BuyHistWithEntity[]>;                                                    // Busca todos os itens da lista de compras

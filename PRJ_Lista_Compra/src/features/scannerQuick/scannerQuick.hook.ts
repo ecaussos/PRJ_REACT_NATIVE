@@ -1,66 +1,195 @@
-// features/quickScanner/quickScanner.hook.tsx
-
+// features/scannerQuick/scannerQuick.hook.tsx
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
+
+import { fetchProductFromCosmos } from '../../core/api/cosmosProduct.api';
+import { fetchProductInfoByGTIN, GeminiProductResult } from '../../core/api/geminiProduct.api';
+
+// Repositórios e Models
+import { ConfigRepository } from '../../data/repositories/config.repository';
 import { BuyListModelInstance } from '../buyList/buyList.model';
+import { groupProductModelInstance } from '../groupProduct/groupProduct.model';
 import { ProductModelInstance } from '../product/product.model';
 import { ScannerQuickIntent, ScannerQuickState } from './scannerQuick.types';
 
+const configRepo = new ConfigRepository();
+
 export function useScannerQuickViewModel() {
   const [state, setState] = useState<ScannerQuickState>({
-    visible: true,  // Estado inicial do modal da câmera
-    loading: false, // Estado de carregamento do processamento
+    visible: true,
+    loading: false,
+    isConfirmModalOpen: false,
+    scannedProduct: null,
+    selectedGroupId: '',
   });
 
-  const handleClose = useCallback(() => {
-    setState(prev => ({ ...prev, visible: false }));  // Esconde o modal da câmera
-    router.back();                                    // Retorna para a tela anterior
+  // Lista local de grupos para popular o Picker/Select da modal
+  const [groups, setGroups] = useState<Array<{ id_group: number; nm_group: string }>>([]);
+
+  // Carrega grupos locais ao iniciar
+  useEffect(() => {
+    async function loadGroups() {
+      try {
+        const localGroups = await groupProductModelInstance.fetchAll();
+        setGroups(localGroups || []);
+      } catch (err) {
+        console.error('[ScannerQuick] Erro ao carregar grupos:', err);
+      }
+    }
+    loadGroups();
   }, []);
 
-  const handleScanSuccess = useCallback(async (barcode: string) => {
-    const cleanBarcode = barcode.trim();            //Remove espaços em branco da leitura
-    if (!cleanBarcode) return;                      // Interrompe se o código estiver vazio
+  const handleClose = useCallback(() => {
+    setState(prev => ({ ...prev, visible: false, isConfirmModalOpen: false }));
+    router.back();
+  }, []);
 
-    setState(prev => ({ ...prev, loading: true })); // Ativa indicador de carregamento
+  const handleCloseModal = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isConfirmModalOpen: false,
+      scannedProduct: null,
+      selectedGroupId: '',
+    }));
+  }, []);
+
+  // Grava o produto no banco e adiciona à lista de compras
+  const saveProductAndAddToBuyList = useCallback(async () => {
+    if (!state.scannedProduct) return;
+
+    setState(prev => ({ ...prev, loading: true }));
+    try {
+      const groupIdNumber = state.selectedGroupId ? Number(state.selectedGroupId) : 0;
+
+      const createdProduct = await ProductModelInstance.create(
+        state.scannedProduct.nm_product,
+        state.scannedProduct.gtin,
+        groupIdNumber
+      );
+
+      if (createdProduct) {
+        await BuyListModelInstance.create(createdProduct.id_product, 1);
+        handleCloseModal();
+        Alert.alert('Sucesso', `${createdProduct.nm_product} adicionado à lista!`, [
+          { text: 'OK', onPress: handleClose },
+        ]);
+      } else {
+        Alert.alert('Erro', 'Não foi possível cadastrar o produto.');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Ocorreu um erro ao salvar o produto.');
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  }, [state.scannedProduct, state.selectedGroupId, handleCloseModal, handleClose]);
+
+  // Prepara a modal com os dados retornados da API
+  const confirmProductRegistration = useCallback((productData: GeminiProductResult) => {
+    // Tenta casar o ID vindo da API com um grupo local existente
+    const matchingGroup = groups.find(g => g.id_group === Number(productData.id_group));
+    const initialGroupId = matchingGroup ? String(matchingGroup.id_group) : '';
+
+    setState(prev => ({
+      ...prev,
+      isConfirmModalOpen: true,
+      scannedProduct: productData,
+      selectedGroupId: initialGroupId,
+    }));
+  }, [groups]);
+
+  // Consulta API externa
+  const fetchProductByConfiguredApi = async (gtin: string): Promise<GeminiProductResult | null> => {
+    const config = await configRepo.getConfig();
+    const provider = String(config.productApiProvider).toUpperCase();
+
+    if (provider === 'COSMOS') {
+      const cosmosResult = await fetchProductFromCosmos(gtin);
+      if (cosmosResult) {
+        return {
+          nm_product: cosmosResult.nm_product,
+          id_group: cosmosResult.id_group,
+          gtin: cosmosResult.gtin || gtin,
+          tag: cosmosResult.tag,
+        };
+      }
+      return null;
+    }
+
+    if (provider === 'GEMINI') {
+      return await fetchProductInfoByGTIN(gtin);
+    }
+
+    return null;
+  };
+
+  // Leitura do código de barras
+  const handleScanSuccess = useCallback(async (barcode: string) => {
+    const cleanBarcode = barcode.trim();
+    if (!cleanBarcode) return;
+
+    setState(prev => ({ ...prev, loading: true }));
 
     try {
-      // 1. Busca produto pelo código de barras
-      const product = await ProductModelInstance.checkBarcode(cleanBarcode);
-      // Valida se o produto não existir (Falso)
-      if (!product) {
-        // Verdadeiro gerar alertar informativo
-        Alert.alert('Aviso', `Nenhum produto cadastrado com o código ${cleanBarcode}.`);
-        // Finaliza execução se não encontrar
+      // 1. Verifica no banco local
+      const existingProduct = await ProductModelInstance.checkBarcode(cleanBarcode);
+
+      if (existingProduct) {
+        await BuyListModelInstance.create(existingProduct.id_product, 1);
+        Alert.alert('Sucesso', `${existingProduct.nm_product} adicionado à lista!`, [
+          { text: 'OK', onPress: handleClose },
+        ]);
         return;
       }
 
-      // 2. Chama a função para adicionar o produto na lista de compra
-      await BuyListModelInstance.create(product.id_product, 1);
-      Alert.alert('Sucesso', `${product.nm_product} adicionado à lista!`, [               // Exibe alerta de confirmação nativo
-        { text: 'OK', onPress: handleClose },                                             // Exibe Títilo botão e ação
-      ]);
-    } catch (error) {                                                                     // Em caso de falha da operação
-      Alert.alert('Erro', 'Não foi possível adicionar o produto pelo código de barras.'); // Exibe alerta de confirmação nativo
-    } finally {
-      setState(prev => ({ ...prev, loading: false }));                                    // Mantém os estados anteriores e atualiza loading
-    }
-  }, [handleClose]);                                                                      // Chama a função para fechar modal.
+      // 2. Consulta API externa
+      const apiResult = await fetchProductByConfiguredApi(cleanBarcode);
 
-  // Dispatcher centralizado MVI
-  const dispatch = useCallback((intent: ScannerQuickIntent) => {
-    switch (intent.type) {                  // Avalia o tipo de intenção MVI
-      case 'CLOSE':                         // Se a intenção for igual a CLOSE
-        handleClose();                      // Dispara o fechamento do modal scanner
-        break;                              // Interrompe a execução
-      case 'SCAN_BARCODE':                  // Se a intenção for igual a SCAN_BARCODE
-        handleScanSuccess(intent.payload);  // Dispara a chamada leitura do código
-        break;                              // Interrompe a execução
+      if (apiResult) {
+        confirmProductRegistration(apiResult);
+        return;
+      }
+
+      // 3. Não encontrado
+      Alert.alert('Produto Não Encontrado', `GTIN: ${cleanBarcode}`, [
+        { text: 'OK', onPress: handleClose },
+      ]);
+    } catch (error) {
+      console.error('[ScannerQuick] Erro na leitura:', error);
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
     }
-  }, [handleClose, handleScanSuccess]);     // Chama as funções para fechar o modal e relizar a leitura do código de barra
+  }, [confirmProductRegistration, handleClose]);
+
+  const dispatch = useCallback((intent: ScannerQuickIntent) => {
+    switch (intent.type) {
+      case 'CLOSE':
+        handleClose();
+        break;
+      case 'SCAN_BARCODE':
+        handleScanSuccess(intent.payload);
+        break;
+      case 'CLOSE_CONFIRM_MODAL':
+        handleCloseModal();
+        break;
+      case 'UPDATE_SCANNED_PRODUCT':
+        setState(prev => ({
+          ...prev,
+          scannedProduct: prev.scannedProduct
+            ? { ...prev.scannedProduct, ...intent.payload }
+            : null,
+        }));
+        break;
+      case 'SET_GROUP_ID':
+        setState(prev => ({ ...prev, selectedGroupId: intent.payload }));
+        break;
+    }
+  }, [handleClose, handleScanSuccess, handleCloseModal]);
 
   return {
-    state,    // Retorna o estado atualizado
-    dispatch, // Retorna a função dispatch MVI
+    state,
+    groups,
+    saveProductAndAddToBuyList,
+    dispatch,
   };
 }

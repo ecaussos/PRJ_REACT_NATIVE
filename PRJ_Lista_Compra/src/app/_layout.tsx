@@ -57,6 +57,11 @@ export default function RootLayout() {
         name="buyHist" 
         options={{ title: 'Histórico de Compras' }} 
       />
+      {/* Configurações */}
+      <Stack.Screen 
+        name="config" 
+        options={{ title: 'Configurações' }} 
+      />
     </Stack>
   );
 }

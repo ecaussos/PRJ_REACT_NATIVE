@@ -10,6 +10,15 @@ import {
 import { IProductRepository } from '../interfaces/product.repository.interface';
 
 export class ProductRepository implements IProductRepository {
+  findByBarcode(gtin: string): Promise<ProductEntity | null> {
+    throw new Error('Method not implemented.');
+  }
+  findByName(nameQuery: string): Promise<Pick<ProductEntity, 'id_product' | 'nm_product'>[]> {
+    throw new Error('Method not implemented.');
+  }
+  findByNameExact(name: string): Promise<ProductEntity | null> {
+    throw new Error('Method not implemented.');
+  }
   // Retorna a lista completa de produtos ordenados por nome com o nome do grupo via LEFT JOIN
   async findAll(): Promise<ProductWithGroupEntity[]> {
     try {
@@ -40,48 +49,6 @@ export class ProductRepository implements IProductRepository {
       return result || null;
     } catch (error) {
       throw new Error(`Erro ao buscar produto por ID: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-
-  // Busca um produto cadastrado com base em seu código de barras (GTIN)
-  async findByBarcode(gtin: string): Promise<ProductEntity | null> {
-    try {
-      const db = await getDBConnection();
-      const query = `SELECT * FROM product WHERE cd_product_gtin = ?;`;
-      const result = await db.getFirstAsync<ProductEntity>(query, [gtin.trim()]);
-      return result || null;
-    } catch (error) {
-      throw new Error(`Erro ao buscar produto por código de barras: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-  
-  // Realiza busca de produto pelo nome exacto/completo (insensível a maiúsculas/minúsculas)
-  async findByNameExact(name: string): Promise<ProductEntity | null> {
-    try {
-      const db = await getDBConnection();
-      const query = `SELECT * FROM product WHERE LOWER(nm_product) = LOWER(?);`;
-      const result = await db.getFirstAsync<ProductEntity>(query, [name.trim()]);
-      return result || null;
-    } catch (error) {
-      throw new Error(`Erro ao buscar produto por nome exato: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-  
-  // Realiza busca parcial de produto pelo nome
-  async findByName(nameQuery: string): Promise<Pick<ProductEntity, 'id_product' | 'nm_product'>[]> {
-    try {
-      const db = await getDBConnection();
-      const query = `
-        SELECT 
-          id_product, 
-          nm_product 
-        FROM product 
-        WHERE nm_product LIKE ?
-        ORDER BY nm_product ASC;
-      `;
-      return await db.getAllAsync<Pick<ProductEntity, 'id_product' | 'nm_product'>>(query, [`%${nameQuery.trim()}%`]);
-    } catch (error) {
-      throw new Error(`Erro ao buscar produtos por nome: ${error instanceof Error ? error.message : error}`);
     }
   }
 

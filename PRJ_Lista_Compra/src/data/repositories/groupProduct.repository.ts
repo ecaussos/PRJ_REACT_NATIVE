@@ -21,7 +21,7 @@ export class GroupProductRepository implements IGroupProductRepository {
     }
   }
 
-  // Busca um fornecedor pelo seu identificador único (ID)
+  // Busca um grupo pelo seu identificador único (ID)
   async findById(id_group: number): Promise<GroupProductEntity | null> {
     try {
       const db = await getDBConnection();

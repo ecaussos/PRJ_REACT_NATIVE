@@ -1,14 +1,32 @@
+// features/scannerQuick/scannerQuick.screen.tsx
+import { View } from 'react-native';
+
 import { BuyListCameraModal } from '../buyList/buyList.form';
+import { ScannerQuickForm } from './scannerQuick.form';
 import { useScannerQuickViewModel } from './scannerQuick.hook';
 
-export function ScannerQuickScreen(){
-  const { state, dispatch } = useScannerQuickViewModel(); // Obtém o estado e o disparador de ações do Hook
+export function ScannerQuickScreen() {
+  const { state, groups, saveProductAndAddToBuyList, dispatch } = useScannerQuickViewModel();
 
   return (
-    <BuyListCameraModal
-      showModal={state.visible}                                                         // Controla a exibição do modal da câmera
-      onScanSuccess={(barcode) => dispatch({ type: 'SCAN_BARCODE', payload: barcode })} // Dispara o processamento do código lido
-      onClose={() => dispatch({ type: 'CLOSE' })}                                       // Dispara o fechamento do modal e retorno de tela
-    />
+    <View style={{ flex: 1 }}>
+      {/* 1. Modal da Câmera / Leitor */}
+      <BuyListCameraModal
+        showModal={state.visible}
+        onScanSuccess={barcode => dispatch({ type: 'SCAN_BARCODE', payload: barcode })}
+        onClose={() => dispatch({ type: 'CLOSE' })}
+      />
+
+      {/* 2. Formulário de Confirmação e Edição Rápida */}
+      <ScannerQuickForm
+        visible={state.isConfirmModalOpen}
+        scannedProduct={state.scannedProduct}
+        selectedGroupId={state.selectedGroupId}
+        groups={groups}
+        loading={state.loading}
+        onSave={saveProductAndAddToBuyList}
+        dispatch={dispatch}
+      />
+    </View>
   );
 }

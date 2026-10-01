@@ -11,6 +11,7 @@ export interface IGroupProductRepository {
   findById(id_group: number): Promise<GroupProductEntity | null>;
   findByNameExact(name: string): Promise<GroupProductEntity | null>;
   findByName(nameQuery: string): Promise<Pick<GroupProductEntity, 'id_group' | 'nm_group'>[]>;
+  findById(query: number):Promise<GroupProductEntity | null>;
   create(group: CreateGroupProductDTO): Promise<GroupProductEntity>;
   update(id_group: number, group: UpdateGroupProductDTO): Promise<void>;
   delete(id_group: number): Promise<void>;

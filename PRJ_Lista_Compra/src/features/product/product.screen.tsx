@@ -6,6 +6,7 @@ import { useProductViewModel } from './product.hook';
 import { styles } from './product.styles';
 
 export default function ProductScreen() {
+
   /* -------- FUNÇÕES EXECUTADAS AO CARREGAR A TELA -------- */
   // Extrai estados e funções de regra de negócio do ViewModel
   const { state, form, handleSaveData, handleDeleteData, dispatch } = useProductViewModel(); // Desestrutura retornos do Hook

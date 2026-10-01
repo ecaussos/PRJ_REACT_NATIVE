@@ -7,8 +7,9 @@ import { GroupProductIntent, GroupProductSearchResult } from './groupProduct.typ
 // Contrato/Interface da Model de Grupo
 export interface IGroupProductModel {
   fetchAll(): Promise<GroupProductEntity[]>;                            // Assinatura para listar todos
-  findByNameExact(name: string): Promise<GroupProductEntity | null>;    // Assinatura para busca exata por nome
-  findByName(query: string): Promise<GroupProductSearchResult[]>;       // Assinatura para busca parcial por nome
+  findByNameExact(name: string): Promise<GroupProductEntity | null>;    // Assinatura para buscar exatamente por nome
+  findByName(query: string): Promise<GroupProductSearchResult[]>;       // Assinatura para buscar parcial por nome
+  findById(query: number):Promise<GroupProductEntity | null>;           // Assinatura para buscar exatamente por ID
   create(nm_group: string): Promise<GroupProductEntity>;                // Assinatura para criação
   update(id_group: number, data: { nm_group: string }): Promise<void>;  // Assinatura para atualização
   delete(id_group: number): Promise<void>;                              // Assinatura para remoção
@@ -21,6 +22,15 @@ export class GroupProductModel {
   // Função para buscar todos os regittros sem filtro
   async fetchAll(): Promise<GroupProductEntity[]> {
     return await this.repository.findAll(); // Executa a busca no repositório
+  }
+
+  // Função para bucar os registro filtrando exatamente pelo ID
+  async findById(id: number): Promise<GroupProductEntity | null> {
+    // // Valida se é um número inteiro válido e maior que zero
+    if (!Number.isInteger(id) || id <= 0){
+      return null; // Retorna nulo se a busca for vazia após a limpeza
+    }                     
+    return await this.repository.findById(id); // Executa a busca no repositório
   }
 
   // Função para bucar os registro filtrando exatamente o que foi digitado
@@ -100,9 +110,9 @@ export class GroupProductModel {
     return name.trim().length > 0;
   }
 
-  // Regra de negócio: Valida se o registro pertence ao padrão do sistema (IDs 1 a 7)
+  // Regra de negócio: Valida se o registro pertence ao padrão do sistema (IDs 1 a 10)
   static isSystemDefault(id_group: number): boolean {
-    return id_group <= 7;
+    return id_group <= 10;
   }
 
   // Regar de negócio: Constrói a intenção (Intent) para Salvar/Edita - Fábrica de ações (Action Factory)
