@@ -53,9 +53,20 @@ export interface BuyHistFilterProps {
 
 // Props para a exibição de cada item da Lista de registros cadastrados
 export interface BuyHistItemProps {
-  item: BuyHistWithEntity;                    // Dados detalhados do item (com JOIN do produto)
-  onEdit: (item: BuyHistWithEntity) => void;  // Ação para abrir modal de edição de quantidade
+  item: BuyHistWithEntity;                               // Dados detalhados do item (com JOIN do produto)
+  onEdit: (item: BuyHistWithEntity) => void;             // Ação para abrir modal de edição de quantidade
   onDelete: (id_hist_buy: number, name: string) => void; // Ação para excluir o item específico
+}
+
+// -------- DTOs para os Payloads das Intenções -------- //
+
+// Dados necessários para atualizar uma configuração existente
+export interface UpdatePayload {
+  id_hist_buy: number;  // ID único do histórico
+  id_product: number;   // ID único do produto
+  qt_product: number;   // Quantidade de produto comprado
+  vl_product: number;   // Valor pago pelo produto
+  id_supplier: number;  // ID único do fornecedor
 }
 
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
@@ -72,12 +83,6 @@ export interface BuyHistState {
 
 // Intenções (MVI) aceitas pelo dispatch do ViewModel
 export type BuyHistIntent =
-  | { type: 'LOAD' }                    // Intenção para carregar registros                                                                                               // Intenção para carregar
-  | { type: 'UPDATE'; payload: {        // Intenção para atualizar registro
-      id_hist_buy: number;              // ID único do histórico
-      id_product: number;               // ID único do produto
-      qt_product: number;               // Quantidade de produto comprado
-      vl_product: number;               // Valor pago pelo produto
-      id_supplier: number;              // ID único do fornecedor
-    } }
-  | { type: 'DELETE'; payload: number } // Intenção para excluir
+  | { type: 'LOAD' }                            // Intenção para carregar registros                                                                                               // Intenção para carregar
+  | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
+  | { type: 'DELETE'; payload: number }         // Intenção para excluir

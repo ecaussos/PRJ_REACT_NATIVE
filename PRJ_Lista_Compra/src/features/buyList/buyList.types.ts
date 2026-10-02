@@ -56,6 +56,19 @@ export interface BuyListSearchProps {
   onCancel: () => void;                                    // Função executada ao cancelar - limpar/fechar modal
 }
 
+// -------- DTOs para os Payloads das Intenções -------- //
+
+// Dados necessários para criar uma nova configuração
+export interface CreatePayload {
+  id_product: number; // ID do produto na compra
+  qt_product: number; // Quantidade de produto na compra
+}
+
+// Dados necessários para atualizar uma configuração existente
+export interface UpdatePayload extends CreatePayload {
+  id_list_buy: number; // ID do produto na compra
+}
+
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
 
 // Estado centralizado retornado pelo Hook
@@ -70,8 +83,8 @@ export interface BuyListState {
 
 // Intenções (MVI) aceitas pelo dispatch do ViewModel
 export type BuyListIntent =
-  | { type: 'LOAD' }                                                         // Intenção para carregar
-  | { type: 'CREATE'; payload: { id_product: number; qt_product: number } }  // Intenção para cadastrar
-  | { type: 'UPDATE'; payload: { id_list_buy: number; qt_product: number } } // Intenção para atualizar 
-  | { type: 'DELETE'; payload: number }                                      // Intenção para excluir
-  | { type: 'CLEAR' }                                                        // Intenção para excluir todos
+  | { type: 'LOAD' }                            // Intenção para carregar
+  | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
+  | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
+  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
+  | { type: 'CLEAR' }                           // Intenção para excluir todos

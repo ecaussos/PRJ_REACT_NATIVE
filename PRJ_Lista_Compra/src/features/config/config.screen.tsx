@@ -1,7 +1,7 @@
 // src/features/config/config.screen.tsx
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
-import ConfigForm, { ConfigActions, ConfigItem, ConfigSearchModal } from './config.form';
+import ConfigForm, { ConfigActions, ConfigFooter, ConfigItem, ConfigSearchModal } from './config.form';
 import { useConfigViewModel } from './config.hook';
 import { styles } from './config.styles';
 
@@ -9,7 +9,15 @@ export default function ConfigScreen() {
 
   /* -------- FUNÇÕES EXECUTADAS AO CARREGAR A TELA -------- */
   // Extrai estados e funções de regra de negócio do ViewModel
-  const { state, form, handleSaveData, handleDeleteData, dispatch } = useConfigViewModel();
+  const { 
+    state, 
+    form, 
+    handleSaveData, 
+    handleDeleteData, 
+    handleCreateLocalFile, 
+    handleDeleteLocalFile, 
+    dispatch 
+  } = useConfigViewModel();
   // Controla a visibilidade do modal de cadastro/edição - inicia fechado/oculto
   const [showForm, setShowForm] = useState(false);
   // Controla a visibilidade do modal/campo de busca - inicia fechado/oculto
@@ -141,6 +149,13 @@ export default function ConfigScreen() {
         ListEmptyComponent={
           !state.loading ? <Text style={styles.emptyText}>Nenhum registro encontrado.</Text> : null
         }
+      />
+
+      {/* Rodapé para gerenciamento do arquivo local e mensagem de status */}
+      <ConfigFooter
+        hasConfigFile={state.hasConfigFile}     // Indica se o arquivo local existe
+        onCreateConfig={handleCreateLocalFile}  // Função disparada ao clicar em criar arquivo
+        onDeleteConfig={handleDeleteLocalFile}  // Função disparada ao clicar em excluir arquivo
       />
 
       {/* Modal para filtrar/localizar registros cadastrados */}

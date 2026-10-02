@@ -9,7 +9,7 @@ export interface ConfigTypeEntity {
 // 2. Entidade base que reflete a tabela 'config' no SQLite
 export interface ConfigEntity {
   id_config: number;               // ID gerado automaticamente (INTEGER)
-  id_tp_config: number;               // Chave estrangeira para o tipo de configuração (INTEGER)
+  id_tp_config: number;            // Chave estrangeira para o tipo de configuração (INTEGER)
   url_config: string | null;       // URL ou Host da configuração
   port_config: number | null;      // Porta de conexão
   user_config: string | null;      // Usuário de autenticação
@@ -25,10 +25,10 @@ export type CreateConfigDTO = Omit<ConfigEntity, 'id_config' | 'dt_config'>;
 // 4. DTO para atualização de registros existentes
 export type UpdateConfigDTO = CreateConfigDTO;
 
-// Tipo simplificado para popular componentes de seleção/picker de tipos de configuração na UI
+// 5. Tipo simplificado para popular componentes de seleção/picker de tipos de configuração na UI
 export type ConfigTypeOption = Pick<ConfigTypeEntity, 'id_tp_config' | 'ds_tp_config'>;
 
-// 5. Entidade expandida para exibições que trazem a descrição do tipo (JOINs)
+// 6. Entidade expandida para exibições que trazem a descrição do tipo (JOINs)
 export interface ConfigWithTypeEntity extends ConfigEntity {
   ds_tp_config?: string;
 }

@@ -34,12 +34,79 @@ export function ConfigActions({
           style={[styles.actionButtonAdd, { backgroundColor: hasActiveSearch ? '#FF9500' : '#D1D1D6' }]}
           // Chama a função ao ser pressionado
           onPress={onClearSearch}
-          // Desabilita o filtro aplicado na pesquisa
+          // Desabilita o filtro applied na pesquisa
           disabled={!hasActiveSearch}
         >
           {/* texto do botão */}
           <Text style={styles.buttonText}>🧹 Limpar</Text>
         </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// Componente para apresentar os botões de gestão do arquivo local e mensagem de status no rodapé
+export function ConfigFooter({
+  hasConfigFile,   // Indica se o arquivo de configuração local existe (true/false)
+  onCreateConfig,  // Função disparada ao clicar no botão de criar o arquivo local
+  onDeleteConfig,  // Função disparada ao clicar no botão de excluir o arquivo local
+}: {
+  hasConfigFile: boolean; // Declaração do tipo para existência do arquivo
+  onCreateConfig: () => void; // Declaração do tipo para criação do arquivo
+  onDeleteConfig: () => void; // Declaração do tipo para exclusão do arquivo
+}) {
+  // -------- MONTAGEM DO RODAPÉ NA TELA -------- //
+  return (
+    // Container principal do rodapé
+    <View style={styles.footer}>
+      {/* Título da seção no rodapé */}
+      <Text style={styles.footerTitle}>Cache Configurações</Text>
+      {/* Botões para criar e excluir o arquivo local */}
+      <View style={styles.footerButtonGroup}>
+        {/* Botão Criar Arquivo Local */}
+        <TouchableOpacity
+          style={[
+            styles.footerButton, // Estilo base do botão
+            hasConfigFile ? styles.btnCreateDisabled : styles.btnCreateActive, // Define cor conforme estado
+          ]}
+          onPress={onCreateConfig} // Ação de clique para criar
+          disabled={hasConfigFile} // Desabilita botão se o arquivo já existir
+        >
+          {/* Texto do botão dinâmico conforme existência do arquivo */}
+          <Text style={styles.footerbuttonText}>
+            {hasConfigFile ? '✅ Arquivo Criado' : '➕ Criar Arquivo'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Botão Excluir Arquivo Local */}
+        <TouchableOpacity
+          style={[
+            styles.footerButton, // Estilo base do botão
+            hasConfigFile ? styles.btnDeleteActive : styles.btnDeleteDisabled, // Define cor conforme estado
+          ]}
+          onPress={onDeleteConfig} // Ação de clique para excluir
+          disabled={!hasConfigFile} // Desabilita botão se o arquivo não existir
+        >
+          {/* Texto do botão */}
+          <Text style={styles.footerbuttonText}>🗑 Excluir Arquivo</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Indicador e mensagem no rodapé informando a situação do arquivo local */}
+      <View style={styles.statusFooter}>
+        {/* Ponto colorido indicando o status visual */}
+        <View
+          style={[
+            styles.statusDot, // Estilo base do indicador
+            hasConfigFile ? styles.dotActive : styles.dotWarning, // Cor do ponto conforme estado
+          ]}
+        />
+        {/* Mensagem textual com o status atual */}
+        <Text style={styles.statusText}>
+          {hasConfigFile
+            ? 'Arquivo local criado e ativo.'
+            : 'Nenhum arquivo encontrado. Utilize o botão "Criar" para gerá-lo.'}
+        </Text>
       </View>
     </View>
   );
@@ -119,8 +186,8 @@ export function ConfigItem({
   userConfig?: string | null;   // Usuário de autenticação
   stSsl: number;                // Status do SSL (1 = Ativo, 0 = Inativo)
   stConfig: number;             // Status da Configuração (1 = Ativo, 0 = Inativo)
-  onEdit: () => void;           // Função disparada ao clicar no botão de editar
-  onDelete: () => void;         // Função disparada ao clicar no botão de excluir
+  onEdit: () => void;           // Declaração do tipo para editar
+  onDelete: () => void;         // Declaração do tipo para deletar
 }){
   // -------- MONTAGEM DOS BOTÕES NA TELA -------- //
   return (
@@ -296,7 +363,7 @@ export default function ConfigForm({
                 <MaterialCommunityIcons
                   name={showKeyText ? 'eye-off-outline' : 'eye-outline'}  // Define o ícone conforme visibilidade da senha
                   size={22}                                               // Tamanho do ícone em pixels
-                  color="#666"                                          // Cor do ícone
+                  color="#666"                                            // Cor do ícone
                 />
               </TouchableOpacity>
             </View>
@@ -318,7 +385,7 @@ export default function ConfigForm({
           {/* Caixa de Seleção para Status da Configuração (Exibido se algum tipo for selecionado) */}
           {showStConfig && (                                        // Renderiza condicionalmente se showStConfig for verdadeiro
             // Container estilizado do seletor
-            <View style={styles.pickerContainer}>                   
+            <View style={styles.pickerContainer}>                  
               <Picker
                 selectedValue={stConfig}                                      // Valor atual do status da configuração (0 ou 1)
                 onValueChange={(itemValue) => setStConfig(Number(itemValue))} // Atualiza o estado convertendo para número

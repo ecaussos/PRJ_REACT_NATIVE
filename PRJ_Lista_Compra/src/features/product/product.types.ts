@@ -42,6 +42,20 @@ export interface ProductItemProps {
   onDelete: (id: number) => void;           // Ação para deletar registro pelo ID
 }
 
+// -------- DTOs para os Payloads das Intenções -------- //
+
+// Dados necessários para criar uma nova configuração
+export interface CreatePayload {
+  nm_product: string;       // Nome do produto
+  id_group: number;         // Id grupo do produto
+  cd_product_gtin: string;  // Código de barra Gtin
+}
+
+// Dados necessários para atualizar uma configuração existente
+export interface UpdatePayload extends CreatePayload {
+  id_product: number; // ID do produto
+}
+
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
 
 // Define o formato do estado do reducer gerenciado pelo ViewModel
@@ -54,7 +68,8 @@ export interface ProductState {
 
 // Define as intenções (Intents/Actions) que o componente pode despachar para o hook executar as regras
 export type ProductIntent =
-  | { type: 'LOAD' }                                                                                                   // Intenção para carregar registros
-  | { type: 'CREATE'; payload: { nm_product: string; id_group: number; cd_product_gtin: string } }                     // Intenção para cadastrar novo registro
-  | { type: 'UPDATE'; payload: { id_product: number; nm_product: string; id_group: number; cd_product_gtin: string } } // Intenção para atualizar registro
-  | { type: 'DELETE'; payload: number };                                                                               // Intenção para excluir registro pelo ID
+  | { type: 'LOAD' }                            // Ação para carregar os dados
+  | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
+  | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
+  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
+  | { type: 'CLEAR' }                           // Intenção para excluir todos

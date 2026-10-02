@@ -46,6 +46,18 @@ export interface SupplierFormProps {
   onCancel: () => void;                       // Função executada ao cancelar e limpar a busca
 }
 
+// -------- DTOs para os Payloads das Intenções -------- //
+
+// Dados necessários para criar uma nova configuração
+export interface CreatePayload {
+  nm_supplier: string;  // Nome do fornecedor
+}
+
+// Dados necessários para atualizar uma configuração existente
+export interface UpdatePayload extends CreatePayload {
+  id_supplier: number; // ID do produto
+}
+
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
 
 // Define o formato do estado do reducer gerenciado pelo ViewModel
@@ -57,10 +69,10 @@ export interface SupplierState {
 
 // Define as intenções (Intents/Actions) que o componente pode despachar para o hook executar as regras
 export type SupplierIntent =
-  | { type: 'LOAD' }                                                          // Intenção para carregar
-  | { type: 'CREATE'; payload: { nm_supplier: string } }                      // Intenção para cadastrar
-  | { type: 'UPDATE'; payload: { id_supplier: number; nm_supplier: string } } // Intenção para atualizar
-  | { type: 'DELETE'; payload: number };                                      // Intenção para excluir
+  | { type: 'LOAD' }                            // Ação para carregar os dados
+  | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
+  | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
+  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
 
 
 

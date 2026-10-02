@@ -225,4 +225,104 @@ eyeIcon: {
   alignItems: 'center',
 },
 
+// Container principal da seção do rodapé
+// Container principal do rodapé
+  footer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    // Sombra para Android e iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+
+  // Título da seção
+  footerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 12,
+  },
+
+  // Agrupamento dos botões (empilhados)
+  footerButtonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+
+    marginBottom: 12,
+  },
+
+  // Estilo base para os botões do rodapé
+  footerButton: {
+    alignSelf: 'stretch',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Texto genérico dos botões
+  footerbuttonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Variações do botão "Criar Arquivo Local"
+  btnCreateActive: {
+    backgroundColor: '#34C759',
+  },
+  btnCreateDisabled: {
+    backgroundColor: '#8E8E93',
+  },
+
+  // Variações do botão "Excluir Arquivo Local"
+  btnDeleteActive: {
+    backgroundColor: '#FF3B30',
+  },
+  btnDeleteDisabled: {
+    backgroundColor: '#D1D1D6',
+  },
+
+  // Container da mensagem e bolinha de status
+  statusFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+
+  // Bolinha indicadora de status
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  dotActive: {
+    backgroundColor: '#34C759',
+  },
+  dotWarning: {
+    backgroundColor: '#FF9500',
+  },
+
+  // Texto explicativo do status
+  statusText: {
+    fontSize: 13,
+    color: '#666666',
+    fontWeight: '500',
+    textAlign: 'center',
+    flexShrink: 1,
+  },
 });

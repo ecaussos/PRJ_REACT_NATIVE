@@ -1,35 +1,54 @@
 // src/features/config/config.model.ts
+import * as FileSystem from 'expo-file-system/legacy';
 import { ConfigEntity } from '../../data/entities/config.entity';
 import { IConfigRepository } from '../../data/interfaces/config.repository.interface';
 import { ConfigRepository } from '../../data/repositories/config.repository';
 import { ConfigIntent, ConfigTypeOption } from './config.types';
 
+// Caminho absoluto onde o arquivo JSON local de configuração será salvo no dispositivo
+const CONFIG_FILE_PATH = `${FileSystem.documentDirectory}app_config.json`;
+
+// Dados padrão gravados ao gerar o arquivo físico de configuração local
+const DEFAULT_FILE_CONFIG_DATA = [
+  {
+    id_config: 1, // Configuração default
+    tp_config: 1, // BD Local
+    st_config: 1, // Ativo
+  },
+];
+
 // Contrato/Interface da Model de Configuração
 export interface IConfigModel {
   fetchAll(): Promise<ConfigEntity[]>;                        // Busca a lista completa de configurações
   findByUrlExact(url: string): Promise<ConfigEntity | null>;  // Busca um registro por URL/Host exato
-  fetchConfigTypeOptions(): Promise<ConfigTypeOption[]>;      // Busca as opções de tipos de configuração                                                                                          // Assinatura para listar tipos de configuração
+  fetchConfigTypeOptions(): Promise<ConfigTypeOption[]>;      // Busca as opções de tipos de configuração                                                                                                                                              // Assinatura para listar tipos de configuração
   create(
-      id_tp_config: number,       // ID do tipo de configuração
-      url_config: string,         // URL ou host do serviço
-      port_config: number | null, // Porta de conexão (opcional)
-      user_config: string | null, // Usuário para autenticação (opcional)
-      key_config: string | null,  // Chave ou senha de acesso (opcional)
-      st_ssl: number,             // Indicador de uso de SSL (1 ativo, 0 inativo)
-      st_config: number           // Status da configuração (1 ativo, 0 inativo)
-    ): Promise<ConfigEntity>;     // Cria um novo registro e retorna a entidade criada
-  update(id_config: number,       // ID da configuração a ser atualizada
+      id_tp_config: number,          // ID do tipo de configuração
+      url_config?: string | null,    // URL ou host do serviço (opcional)
+      port_config?: number | null,   // Porta de conexão (opcional)
+      user_config?: string | null,   // Usuário para autenticação (opcional)
+      key_config?: string | null,    // Chave ou senha de acesso (opcional)
+      st_ssl?: number,               // Indicador de uso de SSL (1 ativo, 0 inativo)
+      st_config?: number             // Status da configuração (1 ativo, 0 inativo)
+    ): Promise<ConfigEntity>;        // Cria um novo registro e retorna a entidade criada
+  update(id_config: number,          // ID da configuração a ser atualizada
         data: {
-          id_tp_config: number;         // Novo tipo de configuração
-          url_config: string;           // Nova URL ou host
-          port_config?: number | null;  // Nova porta (opcional) 
-          user_config?: string | null;  // Novo usuário (opcional)
-          key_config?: string | null;   // Nova chave de acesso (opcional)
-          st_ssl: number;               // Novo status do SSL
-          st_config: number             // Novo status da configuração
+          id_tp_config: number;        // Novo tipo de configuração
+          url_config?: string | null;  // Nova URL ou host (opcional)
+          port_config?: number | null; // Nova porta (opcional) 
+          user_config?: string | null; // Novo usuário (opcional)
+          key_config?: string | null;  // Nova chave de acesso (opcional)
+          st_ssl: number;              // Novo status do SSL
+          st_config: number            // Novo status da configuração
         }
-      ): Promise<void>;                 // Atualiza os dados do registro informado
-  delete(id_config: number): Promise<void>;                   // Remove o registro pelo ID                                                                                                           // Assinatura para remoção
+      ): Promise<void>;                // Atualiza os dados do registro informado
+  delete(id_config: number): Promise<void>;                   // Remove o registro pelo ID                                                                                                                                                             // Assinatura para remoção
+
+  // Assinaturas para manipulação do arquivo JSON local (FileSystem)
+  checkConfigFileExists(): Promise<boolean>;                   // Verifica se o arquivo físico existe no dispositivo
+  createConfigFile(initialData?: any): Promise<boolean>;        // Cria/Gera o arquivo de configuração física local
+  deleteConfigFile(): Promise<boolean>;                        // Exclui o arquivo de configuração física local
+  readConfigFile(): Promise<any | null>;                       // Lê o conteúdo do arquivo físico local
 }
 
 export class ConfigModel implements IConfigModel {
@@ -75,7 +94,7 @@ export class ConfigModel implements IConfigModel {
         throw new Error(`Já existe uma configuração cadastrada com esta URL/Host: "${cleanUrl}"`);
       }
     }
-    // Executa a persistência do registro no repositório'
+    // Executa a persistência do registro no repositório
     return await this.repository.create({
       id_tp_config,                                         // ID do tipo de configuração
       url_config: cleanUrl,                                 // URL/host limpo e sanitizado
@@ -87,7 +106,7 @@ export class ConfigModel implements IConfigModel {
     });
   }
 
-// Função para atualizar e validar antes de salvar no repositório
+  // Função para atualizar e validar antes de salvar no repositório
   async update(
     id_config: number,              // ID da configuração que será atualizada
     data: {
@@ -138,7 +157,64 @@ export class ConfigModel implements IConfigModel {
     await this.repository.delete(id_config);
   }
 
-  //Valida se os campos obrigatórios foram preenchidos de acordo com o tipo selecionado.
+  // --- MANIPULAÇÃO DO ARQUIVO FÍSICO DE CONFIGURAÇÃO (FILE SYSTEM) ---
+
+  // Verifica se o arquivo de configuração física local existe no dispositivo
+  async checkConfigFileExists(): Promise<boolean> {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(CONFIG_FILE_PATH);
+      return fileInfo.exists;
+    } catch (error) {
+      console.error('Erro ao verificar existência do arquivo de configuração local:', error);
+      return false;
+    }
+  }
+
+  // Cria/Gera o arquivo local app_config.json com as configurações padrão
+  async createConfigFile(initialData: any = DEFAULT_FILE_CONFIG_DATA): Promise<boolean> {
+    try {
+      const jsonString = JSON.stringify(initialData, null, 2);
+      await FileSystem.writeAsStringAsync(CONFIG_FILE_PATH, jsonString, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      return true;
+    } catch (error) {
+      console.error('Erro ao criar arquivo de configuração local:', error);
+      return false;
+    }
+  }
+
+  // Exclui o arquivo físico local app_config.json
+  async deleteConfigFile(): Promise<boolean> {
+    try {
+      const exists = await this.checkConfigFileExists();
+      if (exists) {
+        await FileSystem.deleteAsync(CONFIG_FILE_PATH);
+      }
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir arquivo de configuração local:', error);
+      return false;
+    }
+  }
+
+  // Lê os dados salvos dentro do arquivo físico local app_config.json
+  async readConfigFile(): Promise<any | null> {
+    try {
+      const exists = await this.checkConfigFileExists();
+      if (!exists) return null;
+
+      const fileContent = await FileSystem.readAsStringAsync(CONFIG_FILE_PATH, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      return JSON.parse(fileContent);
+    } catch (error) {
+      console.error('Erro ao ler arquivo de configuração local:', error);
+      return null;
+    }
+  }
+
+  // Valida se os campos obrigatórios foram preenchidos de acordo com o tipo selecionado.
 
   /* Tipos:
    * 1 = BD Local (Apenas Tipo e Status)
@@ -191,7 +267,7 @@ export class ConfigModel implements IConfigModel {
     // 1. Verifica se o tipo é inválido ou menor/igual a zero
     if (!tp || tp <= 0) {
       // Verdadeiro: retorna falso
-      return false
+      return false;
     }
     // Limpeza de espaços em branco das strings
     const cleanUrl = urlConfig ? urlConfig.trim() : ''; // URL

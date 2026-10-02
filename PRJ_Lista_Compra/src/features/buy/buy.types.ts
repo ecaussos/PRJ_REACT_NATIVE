@@ -86,6 +86,20 @@ export interface FinishBuyProps {
   onClose: () => void;                                  // Função para fechar o modal
 }
 
+// -------- DTOs para os Payloads das Intenções -------- //
+
+// Dados necessários para criar uma nova configuração
+export interface CreatePayload {
+  id_product: number; // ID do produto na compra
+  qt_product: number; // Quantidade de produto na compra
+  vl_product: number;  // Valor do protudo na compra
+}
+
+// Dados necessários para atualizar uma configuração existente
+export interface UpdatePayload extends CreatePayload {
+  id_product: number; // ID do produto na compra
+}
+
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
 
 // Estado centralizado retornado pelo Hook
@@ -98,8 +112,8 @@ export interface BuyState {
 }
 // Intenções (MVI) aceitas pelo dispatch do ViewModel
 export type BuyIntent =
-  | { type: 'LOAD' }
-  | { type: 'CREATE'; payload: {id_product: number, qt_product: number, vl_product: number } }  // Intenção para cadastrar
-  | { type: 'UPDATE'; payload: { id_product: number; qt_product: number; vl_product: number } } // Intenção para editar produto da lista
-  | { type: 'DELETE'; payload: { id_product: number } }                                         // Intenção para excluir um registro
-  | { type: 'CLEAR' }                                                                           // Intenção para excluir todos
+  | { type: 'LOAD' }                            // Ação para carregar os dados
+  | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
+  | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
+  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
+  | { type: 'CLEAR' }                           // Intenção para excluir todos
