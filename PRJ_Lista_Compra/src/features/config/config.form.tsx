@@ -232,6 +232,8 @@ export default function ConfigForm({
   setUserConfig, // Função para atualizar o Usuário
   keyConfig,     // Valor do campo Chave/Senha
   setKeyConfig,  // Função para atualizar a Chave/Senha
+  versConfig,    // Valor do campo Versão
+  setVersConfig, // Função para atualizar a Versão
   stSsl,         // Status do SSL (1/0)
   setStSsl,      // Função para atualizar o status do SSL
   stConfig,      // Status da Configuração (1/0)
@@ -252,6 +254,8 @@ export default function ConfigForm({
   setUserConfig: (text: string) => void;  // Callback de atualização do Usuário
   keyConfig: string;                      // Texto do campo Chave/Senha
   setKeyConfig: (text: string) => void;   // Callback de atualização da Chave/Senha
+  versConfig: string;                     // Texto do campo Versão
+  setVersConfig: (text: string) => void;  // Callback de atualização da Versão
   stSsl: number;                          // Status do SSL
   setStSsl: (val: number) => void;        // Callback de atualização do SSL
   stConfig: number;                       // Status da Configuração
@@ -281,11 +285,14 @@ export default function ConfigForm({
   const isApiCosmos = selectedType === 3;
   // Regra API Gemini (4): Exibe apenas Chave de Acesso
   const isApiGemini = selectedType === 4;
+  // Regra API Gemini (4): Exibe apenas Chave de Acesso
+  const isScraping = selectedType === 5;
 // Mapeamento dinâmico de permissão por campo
-  const showUrl = isBdCloud || isApiCosmos;                 // Exibe o campo de URL para BD Cloud e API Cosmos
+  const showUrl = isBdCloud || isApiCosmos || isScraping;   // Exibe o campo de URL para BD Cloud e API Cosmos e Gemini
   const showPort = isBdCloud;                               // Exibe o campo de Porta apenas para BD Cloud
   const showUser = isBdCloud;                               // Exibe o campo de Usuário apenas para BD Cloud
   const showKey = isBdCloud || isApiCosmos || isApiGemini;  // Exibe a Chave para BD Cloud, Cosmos e Gemini
+  const showVers = isApiGemini ;                            // Exibe a versão para BD Cloud, Cosmos e Gemini
   const showSsl = isBdCloud;                                // Exibe a opção de SSL apenas para BD Cloud
   const showStConfig = isTypeSelected;                      // O status da configuração aparece para qualquer tipo selecionado
 
@@ -315,13 +322,13 @@ export default function ConfigForm({
             </Picker>
           </View>
           {/* Campo para preenchimento da URL / Host (BD Cloud e API Cosmos) */}
-          {showUrl && (                   // Renderiza condicionalmente se showUrl for verdadeiro
+          {showUrl && (                           // Renderiza condicionalmente se showUrl for verdadeiro
             <TextInput
-              style={styles.input}        // Estilização padrão do campo de texto
-              placeholder="URL / Host *"  // Texto de instrução/placeholder
-              value={urlConfig}           // Valor do estado associado à URL
-              onChangeText={setUrlConfig} // Função de atualização do estado da URL
-              autoCapitalize="none"       // Desabilita a capitalização automática de letras
+              style={styles.input}                // Estilização padrão do campo de texto
+              placeholder="URL / Host *" // Texto de instrução/placeholder
+              value={urlConfig}                   // Valor do estado associado à URL
+              onChangeText={setUrlConfig}         // Função de atualização do estado da URL
+              autoCapitalize="none"               // Desabilita a capitalização automática de letras
             />
           )}
           {/* Campo para preenchimento da Porta (Apenas BD Cloud) */}
@@ -368,6 +375,17 @@ export default function ConfigForm({
               </TouchableOpacity>
             </View>
           )}
+          {/* Campo para preenchimento da Versão (Apenas Gemini) */}          
+          {showVers && (                           // Renderiza condicionalmente se showUrl for verdadeiro
+            <TextInput
+              style={styles.input}                // Estilização padrão do campo de texto
+              placeholder=" Versão *"             // Texto de instrução/placeholder
+              value={versConfig}                   // Valor do estado associado à URL
+              onChangeText={setVersConfig}         // Função de atualização do estado da URL
+              autoCapitalize="none"               // Desabilita a capitalização automática de letras
+            />
+          )}
+
           {/* Caixa de Seleção para Status do SSL (Apenas BD Cloud) */}
           {showSsl && (                                             // Renderiza condicionalmente se showSsl for verdadeiro
              // Container estilizado do seletor

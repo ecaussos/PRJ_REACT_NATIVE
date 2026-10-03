@@ -14,6 +14,7 @@ export interface ConfigEntity {
   port_config: number | null;      // Porta de conexão
   user_config: string | null;      // Usuário de autenticação
   key_config: string | null;       // Chave de acesso ou senha
+  vers_config: string | null;      // versão de acesso
   st_ssl: number;                  // Status do SSL (1 = ativo, 0 = inativo)
   st_config: number;               // Status da configuração (1 = ativo, 0 = inativo)
   dt_config?: string;              // Data de criação/registro no SQLite

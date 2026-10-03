@@ -10,15 +10,7 @@ import {
 import { IProductRepository } from '../interfaces/product.repository.interface';
 
 export class ProductRepository implements IProductRepository {
-  findByBarcode(gtin: string): Promise<ProductEntity | null> {
-    throw new Error('Method not implemented.');
-  }
-  findByName(nameQuery: string): Promise<Pick<ProductEntity, 'id_product' | 'nm_product'>[]> {
-    throw new Error('Method not implemented.');
-  }
-  findByNameExact(name: string): Promise<ProductEntity | null> {
-    throw new Error('Method not implemented.');
-  }
+
   // Retorna a lista completa de produtos ordenados por nome com o nome do grupo via LEFT JOIN
   async findAll(): Promise<ProductWithGroupEntity[]> {
     try {
@@ -39,6 +31,66 @@ export class ProductRepository implements IProductRepository {
       throw new Error(`Erro ao listar produtos: ${error instanceof Error ? error.message : error}`);
     }
   }
+
+  async findByBarcode(cd_product_gtin: string): Promise<ProductEntity | null> {
+    try {
+      const db = await getDBConnection();
+      const query = `
+        SELECT 
+          id_product, 
+          nm_product, 
+          cd_product_gtin
+        FROM product
+        WHERE cd_product_gtin = ?;
+      `;
+      return await db.getFirstAsync<ProductEntity>(query, [cd_product_gtin]);
+    } catch (error: any) {
+      throw new Error(`Erro ao buscar por código: ${error.message}`);
+    }
+  }
+
+  async findByName(nm_product: string): Promise<ProductEntity[]> {
+    try {
+      const db = await getDBConnection();
+      const query = `
+        SELECT 
+          p.id_product, 
+          p.nm_product,
+          p.cd_product_gtin,
+          g.nm_group
+        FROM product p
+        LEFT JOIN group_product g ON p.id_group = g.id_group
+        WHERE p.nm_product LIKE ?
+        ORDER BY p.nm_product ASC;
+      `;
+      const searchName = `%${nm_product.trim()}%`;
+      return await db.getAllAsync<ProductEntity>(query, [searchName]);
+    } catch (error: any) {
+      throw new Error(`Erro ao buscar por nome: ${error.message}`);
+    }
+  }
+
+  // Busca um produto no banco pelo nome exato (case-insensitive)
+  async findByNameExact(name: string): Promise<ProductEntity | null> {
+    try {
+      const db = await getDBConnection(); // Obtém a conexão do SQLite local
+
+      // Executa a busca case-insensitive utilizando a função LOWER() do SQLite
+      const row = await db.getFirstAsync<ProductEntity>(
+        `SELECT id_product, nm_product, id_group, cd_product_gtin
+        FROM product 
+        WHERE LOWER(nm_product) = LOWER(?);`,
+        [name.trim()]
+      );
+
+      return row || null; // Retorna o registro encontrado ou null caso não exista
+    } catch (error) {
+      console.error('[ProductRepository] ❌ Erro ao buscar produto por nome exato:', error);
+      throw error; // Repassa a exceção para ser tratada na camada superior
+    }
+  }
+
+
 
   // Busca um produto pelo seu identificador único (ID)
   async findById(id_product: number): Promise<ProductEntity | null> {

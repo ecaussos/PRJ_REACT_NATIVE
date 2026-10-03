@@ -1,8 +1,8 @@
 // src/features/scannerBarcode/scannerBarcode.screen.tsx
-import { CameraView } from 'expo-camera'; // Módulo de câmera do Expo
-import { ActivityIndicator, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; // Componentes nativos
+import { CameraView } from 'expo-camera';
+import { ActivityIndicator, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useScannerBarcodeViewModel } from './scannerBarcode.hook';
-import { styles } from './scannerBarcode.styles'; // Estilos da tela de escaneamento
+import { styles } from './scannerBarcode.styles';
 import { BarcodeScannerProps } from './scannerBarcode.types';
 
 // Componente para escaneamento de código de barras usando a Câmera

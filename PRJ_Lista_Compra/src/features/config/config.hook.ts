@@ -20,6 +20,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
   const [portConfig, setPortConfig] = useState('');                 // Armazena a porta de conexão
   const [userConfig, setUserConfig] = useState('');                 // Armazena o usuário de autenticação
   const [keyConfig, setKeyConfig] = useState('');                   // Armazena a chave ou senha de acesso
+  const [versConfig, setVersConfig] = useState('');                 // Armazena a versão
   const [stSsl, setStSsl] = useState(0);                            // Armazena o status do SSL (1 = ativo, 0 = inativo)
   const [stConfig, setStConfig] = useState(1);                      // Armazena o status da configuração (1 = ativo, 0 = inativo)
   const [searchText, setSearchText] = useState('');                 // Armazena o termo para filtragem na listagem
@@ -32,6 +33,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
     setPortConfig('');  // Limpa o campo de porta
     setUserConfig('');  // Limpa o campo de usuário
     setKeyConfig('');   // Limpa o campo de chave/senha
+    setVersConfig('');  // Limpa o campo Versão
     setStSsl(0);        // Reseta SSL para inativo (0)
     setStConfig(1);     // Reseta status para ativo (1)
     setEditingId(null); // Limpa o ID, voltando o formulário para modo de criação
@@ -60,10 +62,11 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
         case 'CREATE': {                      // Se a intenção for igual a CREATE
           await model.create(                 // Envia a intenção de criar com os campos informados
             intent.payload.id_tp_config,      // Tipo de configuração
-            intent.payload.url_config || '',  // URL / Host
+            intent.payload.url_config,        // URL / Host
             intent.payload.port_config,       // Porta
             intent.payload.user_config,       // Usuário
             intent.payload.key_config,        // Chave de acesso / senha
+            intent.payload.vers_config,       // Versão
             intent.payload.st_ssl,            // Status do SSL
             intent.payload.st_config          // Status da Configuração
           );
@@ -80,6 +83,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
             port_config: intent.payload.port_config,      // Porta atualizada
             user_config: intent.payload.user_config,      // Usuário atualizado
             key_config: intent.payload.key_config,        // Chave de acesso atualizada
+            vers_config: intent.payload.vers_config,      // Versão Atualizada
             st_ssl: intent.payload.st_ssl,                // Status SSL atualizado
             st_config: intent.payload.st_config,          // Status da configuração atualizado
           });
@@ -196,7 +200,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
 
   // Função para salvar, validar e gerar mensagem correspondente às ações
   const handleSaveData = async (): Promise<boolean> => {                        // Função assíncrona que retorna boolean de confirmação
-    if (!ConfigModel.isValid(tpConfig, urlConfig, keyConfig)) {                 // Executa validações de dados obrigatórios conforme o tipo
+    if (!ConfigModel.isValid(tpConfig, urlConfig, keyConfig, versConfig)) {                 // Executa validações de dados obrigatórios conforme o tipo
       Alert.alert('Aviso', 'Preencha os campos obrigatórios para o registro!'); // Alerta o usuário em caso de dados inválidos
       return false;                                                             // Interrompe a execução e retorna falso
     }
@@ -207,6 +211,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
       portConfig,                               // Porta de conexão
       userConfig,                               // Usuário de autenticação
       keyConfig,                                // Chave ou senha de acesso
+      versConfig,                               // Versão
       stSsl,                                    // Status do protocolo SSL
       stConfig,                                 // Status geral da configuração
       isEditing,                                // Indicador de modo edição
@@ -277,6 +282,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
     portConfigVal: number | null,                                      // Porta de conexão cadastrada (pode ser nula)
     userConfigVal: string | null,                                      // Usuário cadastrado (pode ser nulo)
     keyConfigVal: string | null,                                       // Chave ou senha cadastrada (pode ser nula)
+    versConfigVal: string | null,                                      // Chave ou senha cadastrada (pode ser nula)
     stSslVal: number,                                                  // Status da flag SSL (1 para ativo, 0 para inativo)
     stConfigVal: number                                                // Status geral da configuração (1 para ativo, 0 para inativo)
   ) => {
@@ -286,6 +292,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
     setPortConfig(portConfigVal !== null ? String(portConfigVal) : '');// Converte e preenche a porta (ou string vazia se nula)
     setUserConfig(userConfigVal ?? '');                                // Preenche o campo do usuário (trata null convertendo para string vazia)
     setKeyConfig(keyConfigVal ?? '');                                  // Preenche o campo da chave/senha (trata null convertendo para string vazia)
+    setVersConfig(versConfigVal ?? '');                                // Preenche o campo da chave/senha (trata null convertendo para string vazia)
     setStSsl(stSslVal);                                                // Define o status do protocolo SSL no estado
     setStConfig(stConfigVal);                                          // Define o status da configuração no estado
   };
@@ -306,6 +313,8 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
       setUserConfig,                  // Setter para campo usuário
       keyConfig,                      // Valor atual do campo chave/senha
       setKeyConfig,                   // Setter para campo chave/senha
+      versConfig,                     // Valor atual do campo versão
+      setVersConfig,                  // Setter para campo versão
       stSsl,                          // Valor atual do status SSL
       setStSsl,                       // Setter para status SSL
       stConfig,                       // Valor atual do status da configuração

@@ -1,6 +1,6 @@
 // src/core/api/geminiProduct.api.ts
-import { GoogleGenAI } from '@google/genai'; // Importa a SDK oficial do Google GenAI
-import { ConfigModelInstance } from '../../features/config/config.model'; // Importa a instância do Model de Configuração para leitura do arquivo JSON local
+import { GoogleGenAI } from '@google/genai';
+import { ConfigModelInstance } from '../../features/config/config.model';
 
 export interface GeminiProductResult {
   nm_product: string; // Nome oficial/comercial do produto formatado
@@ -13,64 +13,81 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Consulta as configurações salvas no arquivo JSON local (`config.json`)
- * e retorna a API Key do Gemini e o modelo desejado (se houver).
+ * e recupera dinamicamente a API Key e o modelo configurado em `vers_config`.
  */
 async function getGeminiConfigFromFile() {
   try {
-    const fileExists = await ConfigModelInstance.checkConfigFileExists(); // Verifica a existência do arquivo JSON local
+    const fileExists = await ConfigModelInstance.checkConfigFileExists();
     if (!fileExists) {
-      console.log('[Gemini Config] ⚠️ Arquivo config.json não encontrado localmente.'); // Loga a ausência do arquivo
-      return null; // Retorna nulo se o arquivo não existir
+      console.log('[Gemini Config] ⚠️ Arquivo config.json não encontrado localmente.');
+      return null;
     }
 
-    const configFile = await ConfigModelInstance.readConfigFile(); // Realiza a leitura do arquivo JSON local
-    if (!configFile) return null; // Retorna nulo caso o arquivo esteja vazio ou inválido
+    const configFile = await ConfigModelInstance.readConfigFile();
+    if (!configFile) return null;
 
-    // Procura na lista de configurações do arquivo por um registro associado ao Gemini
-    const geminiConfig = configFile.configs?.find((cfg: any) =>
-      cfg.ds_tp_config?.toUpperCase().includes('GEMINI') || cfg.id_tp_config === 2
+    const configsList = Array.isArray(configFile) ? configFile : configFile.configs;
+
+    if (!Array.isArray(configsList)) {
+      console.warn('[Gemini Config] ⚠️ Estrutura do arquivo config.json não é um array válido.');
+      return null;
+    }
+
+    // Busca a configuração com id_tp_config === 4 ou descrição "API Gemini"
+    const geminiConfig = configsList.find((cfg: any) =>
+      cfg.id_tp_config === 4 ||
+      cfg.ds_tp_config?.toUpperCase().includes('API GEMINI')
     );
 
     if (geminiConfig) {
-      console.log('[Gemini Config] ⚙️ Configuração do Gemini localizada no arquivo JSON.'); // Loga a localização do registro
+      console.log('[Gemini Config] ⚙️ Configuração do Gemini localizada no arquivo JSON:', geminiConfig);
       return {
-        apiKey: geminiConfig.key_config || null,   // Recupera a API Key do Gemini do arquivo
-        model: geminiConfig.url_config || null,    // Pode usar url_config/outro campo para especificar o modelo customizado, se houver
+        apiKey: geminiConfig.key_config || null,
+        // Respeita dinamicamente o valor cadastrado no campo vers_config (com fallback secundário para url_config)
+        model: geminiConfig.vers_config || geminiConfig.url_config || null,
       };
     }
   } catch (error) {
-    console.warn('[Gemini Config] ⚠️ Erro ao ler arquivo de configuração local:', error); // Loga exceções de leitura
+    console.warn('[Gemini Config] ⚠️ Erro ao ler arquivo de configuração local:', error);
   }
-  return null; // Retorna nulo se nenhuma configuração for encontrada
+  return null;
 }
 
 /**
- * Identifica e categoriza um produto diretamente via Gemini a partir do GTIN,
- * utilizando a API Key e configurações exclusivamente do arquivo JSON local.
+ * Classifica e formatar um produto via Gemini a partir da Descrição Bruta e GTIN.
+ * Esta abordagem utiliza o modelo dinâmico (vers_config) como motor de IA
+ * sem depender do Google Search, eliminando o estouro de cotas (Erro 429) e alucinações.
  */
-export async function fetchProductInfoByGTIN(gtin: string): Promise<GeminiProductResult | null> {
-  // Busca as configurações a partir do arquivo JSON local
-  const fileConfig = await getGeminiConfigFromFile(); // Lê a chave e modelo configurados localmente
+export async function fetchProductInfoByGTIN(
+  gtin: string,
 
-  // Valida se a API Key existe no arquivo local
+): Promise<GeminiProductResult | null> {
+  const fileConfig = await getGeminiConfigFromFile();
+
   if (!fileConfig || !fileConfig.apiKey) {
-    console.warn('[Gemini API] ⛔ Falha: Nenhuma API Key do Gemini foi encontrada no arquivo config.json.'); // Exibe aviso de falta de credencial
-    return null; // Interrompe a consulta
+    console.warn('[Gemini API] ⛔ Falha: Nenhuma API Key do Gemini foi encontrada no arquivo config.json.');
+    return null;
   }
 
-  // Instancia a SDK do GoogleGenAI com a chave obtida exclusivamente do arquivo
-  const ai = new GoogleGenAI({ apiKey: fileConfig.apiKey }); // Inicializa o cliente do Gemini
+  // Utiliza estritamente o modelo definido em vers_config no arquivo de configuração
+  const selectedModel = fileConfig.model ? fileConfig.model.trim() : null;
 
-  // Define o modelo configurado no arquivo ou utiliza o padrão
-  const selectedModel = fileConfig.model || 'gemini-2.5-flash'; // Define o modelo de IA a ser utilizado
+  if (!selectedModel) {
+    console.warn('[Gemini API] ⛔ Falha: Nenhum modelo (vers_config) foi definido no arquivo de configuração.');
+    return null;
+  }
 
-  console.log(`\n=================== [GEMINI API - INÍCIO] ===================`); // Exibe delimitador no log
-  console.log(`[Gemini API] 🚀 Iniciando busca via Gemini para o GTIN: ${gtin}`); // Loga o início da busca
-  console.log(`[Gemini API] 🤖 Modelo selecionado: ${selectedModel}`); // Loga o modelo em uso
+  const ai = new GoogleGenAI({ apiKey: fileConfig.apiKey });
+
+  console.log(`\n=================== [GEMINI API - INÍCIO] ===================`);
+  console.log(`[Gemini API] 🚀 Processando produto com Gemini para GTIN: ${gtin}`);
+  console.log(`[Gemini API] 🤖 Modelo selecionado (vers_config): ${selectedModel}`);
 
   const prompt = `
-    Atuar como um buscador, identificador e categorizador de produtos de supermercado. 
-    A partir do GTIN ${gtin}, identifique o produto correspondente.
+    Atuar como um buscador de produtos na internet e identicar o produto através do código de barra GTIN.
+
+    Dados de Entrada:
+    - Código GTIN: ${gtin}
 
     Tabela de Grupos:
     ID 1: MERCEARIA
@@ -85,11 +102,11 @@ export async function fetchProductInfoByGTIN(gtin: string): Promise<GeminiProduc
     ID 10: NÃO CLASSIFICADOS
 
     Instruções:
-    1. Identifique o nome oficial/comercial do produto.
-    2. Classifique-o estritamente em um dos IDs da tabela acima.
-    3. Crie uma Tag amigável (apenas o nome comum/tipo do produto sem a marca).
+    1. Padronize a Descrição Comercial do produto em MAIÚSCULAS mantendo o peso/volume.
+    2. Classifique o produto estritamente em um dos IDs da tabela acima.
+    3. Crie uma Tag amigável (apenas o tipo do produto, sem a marca. Exemplo: "Chocolate em Barra").
 
-    Formato de Saída:
+    Formato de Saída Obrigatório:
     Descrição: [Nome completo em MAIÚSCULAS]
     Grupo: [Apenas o número do ID]
     Código GTIN: ${gtin}
@@ -99,42 +116,44 @@ export async function fetchProductInfoByGTIN(gtin: string): Promise<GeminiProduc
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: selectedModel,
+        model: selectedModel, // Nome do modelo 100% dinâmico vindo do vers_config
         contents: prompt,
+        // config: {tools: [{ googleSearch: {} }],}, // Grounding com Google Search para buscar o GTIN real na web
       });
 
       const text = response.text;
-      if (!text) break; // Sai da tentativa se não houver texto retornado
+      if (!text) break;
 
       const descMatch = text.match(/Descrição:\s*(.+)/i);
       const groupMatch = text.match(/Grupo:\s*(\d+)/i);
       const tagMatch = text.match(/Tag:\s*(.+)/i);
 
-      if (!descMatch) break; // Interrompe se a descrição não puder ser extraída do texto
+      // Valor de contingência caso a IA não retorne o nome da descrição
+      const fallbackName = `PRODUTO GTIN ${gtin}`;
 
       const result: GeminiProductResult = {
-        nm_product: descMatch[1].trim().toUpperCase(),
-        id_group: groupMatch ? parseInt(groupMatch[1], 10) : 10, // Define fallback para o ID 10 (NÃO CLASSIFICADOS)
+        nm_product: descMatch ? descMatch[1].trim().toUpperCase(): fallbackName,
+        id_group: groupMatch ? parseInt(groupMatch[1], 10) : 10,
         gtin,
         tag: tagMatch ? tagMatch[1].trim() : '',
       };
 
-      console.log(`[Gemini API] ✅ Produto identificado com sucesso: "${result.nm_product}"`); // Loga o produto localizado
-      console.log(`[Gemini API] 🎯 Resultado final:`, JSON.stringify(result, null, 2)); // Loga o objeto retornado
-      console.log(`=================== [GEMINI API - FIM] ===================\n`); // Exibe encerramento no log
-      return result; // Retorna o resultado obtido
+      console.log(`[Gemini API] ✅ Produto processado com sucesso: "${result.nm_product}"`);
+      console.log(`[Gemini API] 🎯 Resultado final:`, JSON.stringify(result, null, 2));
+      console.log(`=================== [GEMINI API - FIM] ===================\n`);
+      return result;
 
     } catch (error: any) {
       if (attempt < 3 && (error?.status === 503 || error?.status === 429)) {
-        console.warn(`[Gemini API] ⚠️ Tentativa ${attempt} falhou (${error?.status || 'Erro'}). Aguardando retry...`); // Loga aviso de tentativa e pausa
-        await sleep(attempt * 1500); // Aguarda intervalo com backoff antes da próxima tentativa
+        console.warn(`[Gemini API] ⚠️ Tentativa ${attempt} falhou (${error?.status || 'Erro'}). Aguardando retry...`);
+        await sleep(attempt * 1500);
       } else {
-        console.error(`[Gemini API] ❌ Erro ao chamar o modelo ${selectedModel}:`, error); // Registra a falha final
-        break; // Interrompe o loop de retentativas
+        console.error(`[Gemini API] ❌ Erro ao chamar o modelo ${selectedModel}:`, error);
+        break;
       }
     }
   }
 
-  console.log(`=================== [GEMINI API - FIM] ===================\n`); // Exibe delimitador final em caso de erro
-  return null; // Retorna nulo se a identificação falhar
+  console.log(`=================== [GEMINI API - FIM] ===================\n`);
+  return null;
 }

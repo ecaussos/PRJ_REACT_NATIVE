@@ -11,9 +11,10 @@ import { IConfigRepository } from '../interfaces/config.repository.interface';
 
 export class ConfigRepository implements IConfigRepository {
   // Retorna a lista completa de configurações ordenadas por ID com a descrição do tipo via INNER JOIN
+// Busca e retorna todas as configurações cadastradas no banco de dados
   async findAll(): Promise<ConfigWithTypeEntity[]> {
     try {
-      const db = await getDBConnection();
+      const db = await getDBConnection(); // Obtém a conexão com o banco de dados SQLite
       const query = `
         SELECT 
           c.id_config,
@@ -23,16 +24,26 @@ export class ConfigRepository implements IConfigRepository {
           c.port_config,
           c.user_config,
           c.key_config,
+          c.vers_config,
           c.st_ssl,
           c.st_config,
           c.dt_config
         FROM config c
         INNER JOIN config_type t ON c.id_tp_config = t.id_tp_config
         ORDER BY c.id_config ASC;
-      `;
-      return await db.getAllAsync<ConfigWithTypeEntity>(query);
+      `; // Define a instrução SQL para buscar as configurações com a descrição do tipo
+
+      const results = await db.getAllAsync<ConfigWithTypeEntity>(query); // Executa a consulta no banco de dados
+
+      console.log('--------------------------------------------------');
+      console.log('[ConfigRepository] 🗄️ CONFIGURAÇÕES ENCONTRADAS NO BANCO:');
+      console.log(JSON.stringify(results, null, 2)); // Imprime os resultados formatados no console
+      console.log('--------------------------------------------------');
+
+      return results; // Retorna a lista de configurações encontrada
     } catch (error) {
-      throw new Error(`Erro ao listar configurações: ${error instanceof Error ? error.message : error}`);
+      console.error('[ConfigRepository] ❌ Erro ao listar configurações:', error); // Registra a falha no console
+      throw new Error(`Erro ao listar configurações: ${error instanceof Error ? error.message : error}`); // Lança exceção tratada
     }
   }
 
@@ -83,10 +94,11 @@ export class ConfigRepository implements IConfigRepository {
           port_config, 
           user_config, 
           key_config, 
+          vers_config,
           st_ssl, 
           st_config, 
           dt_config
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'));
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'));
       `;
 
       const result = await db.runAsync(query, [
@@ -95,6 +107,7 @@ export class ConfigRepository implements IConfigRepository {
         config.port_config || null,
         config.user_config || null,
         config.key_config || null,
+        config.vers_config || null,
         config.st_ssl ?? 1,
         config.st_config ?? 1,
       ]);
@@ -106,6 +119,7 @@ export class ConfigRepository implements IConfigRepository {
         port_config: config.port_config,
         user_config: config.user_config,
         key_config: config.key_config,
+        vers_config: config.vers_config,
         st_ssl: config.st_ssl ?? 1,
         st_config: config.st_config ?? 1,
       };
@@ -125,7 +139,8 @@ export class ConfigRepository implements IConfigRepository {
           url_config = ?, 
           port_config = ?, 
           user_config = ?, 
-          key_config = ?, 
+          key_config = ?,
+          vers_config = ?, 
           st_ssl = ?, 
           st_config = ?
         WHERE id_config = ?;
@@ -136,6 +151,7 @@ export class ConfigRepository implements IConfigRepository {
         config.port_config || null,
         config.user_config || null,
         config.key_config || null,
+        config.vers_config || null,
         config.st_ssl,
         config.st_config,
         id_config,

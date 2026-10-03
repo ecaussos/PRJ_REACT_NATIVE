@@ -7,6 +7,7 @@ export async function up(db: any) {
         port_config INTEGER,
         user_config TEXT,
         key_config TEXT, -- Chave de acesso/senha (Criptografado)
+        vers_config TEXT,
         st_ssl INTEGER NOT NULL DEFAULT 1 CHECK (st_ssl IN (0, 1)),
         st_config INTEGER NOT NULL DEFAULT 1 CHECK (st_config IN (0, 1)),
         dt_config TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),

@@ -39,6 +39,7 @@ export default function ConfigScreen() {
     portConfig: number | null,  // Porta de conexão (pode ser nula se padrão)
     userConfig: string | null,  // Usuário de autenticação (pode ser nulo)
     keyConfig: string | null,   // Chave ou senha de acesso (pode ser nula)
+    versConfig: string | null,  // Versão (pode ser nula)
     stSsl: number,              // Status do SSL (ex: 1 para ativo, 0 para inativo)
     stConfig: number            // Status geral da configuração (ex: ativo/inativo)
   ) => {
@@ -49,6 +50,7 @@ export default function ConfigScreen() {
       portConfig,       // Preenche a porta definida
       userConfig ?? '', // Define o usuário (converte null para string vazia)
       keyConfig ?? '',  // Define a chave (converte null para string vazia)
+      versConfig ?? '', // Define a vesão (converte null para string vazia)
       stSsl,            // Define o estado da conexão segura SSL
       stConfig          // Define o estado de ativação da configuração
     ); // Preenche o formulário com os dados do registro selecionado
@@ -98,6 +100,8 @@ export default function ConfigScreen() {
         setUserConfig={form.setUserConfig}  // Passa a função para atualizar o usuário
         keyConfig={form.keyConfig}          // Passa a chave ou senha
         setKeyConfig={form.setKeyConfig}    // Passa a função para atualizar a chave
+        versConfig={form.versConfig}        // Passa a versão
+        setVersConfig={form.setVersConfig}  // Passa a função para atualizar a versão
         stSsl={form.stSsl}                  // Passa o status do SSL (1/0)
         setStSsl={form.setStSsl}            // Passa a função para atualizar o status do SSL
         stConfig={form.stConfig}            // Passa o status da Configuração (1/0)
@@ -137,6 +141,7 @@ export default function ConfigScreen() {
                 item.port_config,       // Porta de conexão do serviço
                 item.user_config,       // Nome de usuário para autenticação
                 item.key_config,        // Chave ou senha de acesso
+                item.vers_config,       // Chave ou senha de acesso
                 item.st_ssl,            // Indicador de uso do protocolo SSL
                 item.st_config          // Status de ativação da configuração
               )

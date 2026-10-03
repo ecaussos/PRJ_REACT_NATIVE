@@ -45,6 +45,7 @@ export interface CreatePayload {
   port_config: number | null; // Porta de conexão
   user_config: string | null; // Usuário de autenticação
   key_config: string | null;  // Chave/Token de acesso
+  vers_config: string | null; // Versão
   st_ssl: number;             // Indicador de uso de SSL (1 para sim, 0 para não)
   st_config: number;          // Status da configuração (1 para ativo, 0 para inativo)
 }

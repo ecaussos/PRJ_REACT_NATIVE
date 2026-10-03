@@ -21,6 +21,11 @@ export interface CosmosApiResponse {
   };
 }
 
+export interface CosmosFileConfig {
+  url_config: string | null; // URL da API configurada no arquivo JSON
+  key_config: string | null; // Chave/Token da API configurado no arquivo JSON
+}
+
 /**
  * Consulta a tabela local `from_to_group` pelo NCM (ou prefixos do NCM)
  * Testa do código mais específico (8 dígitos) até o capítulo (2 dígitos)
@@ -69,9 +74,9 @@ async function findGroupIdByNcm(ncmCode?: string): Promise<number | null> {
 
 /**
  * Consulta as configurações salvas no arquivo JSON local (`config.json`)
- * e retorna o token do Cosmos e o host configurado.
+ * e retorna os campos de chave e URL da configuração do Cosmos.
  */
-async function getCosmosConfigFromFile() {
+async function getCosmosConfigFromFile(): Promise<CosmosFileConfig | null> {
   try {
     const fileExists = await ConfigModelInstance.checkConfigFileExists(); // Verifica se o arquivo JSON de configuração existe localmente
     if (!fileExists) {
@@ -82,16 +87,25 @@ async function getCosmosConfigFromFile() {
     const configFile = await ConfigModelInstance.readConfigFile(); // Realiza a leitura do conteúdo do arquivo JSON local
     if (!configFile) return null; // Retorna nulo caso o arquivo esteja vazio ou inválido
 
-    // Procura na lista de configurações do arquivo por um registro correspondente ao Cosmos
-    const cosmosConfig = configFile.configs?.find((cfg: any) => 
-      cfg.ds_tp_config?.toUpperCase().includes('COSMOS') || cfg.id_tp_config === 1
-    );
+    // Garante o acesso ao array correto, independente de ser o array direto ou envelopado em { configs: [...] }
+    const configsList = Array.isArray(configFile) ? configFile : configFile.configs; // Obtém o array de configurações
+
+    if (!Array.isArray(configsList)) {
+      console.warn('[Cosmos Config] ⚠️ Estrutura do arquivo config.json não é um array válido.'); // Alerta formato inesperado
+      return null; // Retorna nulo caso não seja um array iterável
+    }
+
+    // Procura na lista pelo id_tp_config === 3 ou pela descrição da API
+    const cosmosConfig = configsList.find((cfg: any) => 
+      cfg.id_tp_config === 3 || 
+      cfg.ds_tp_config?.toUpperCase().includes('API COSMOS')
+    ); // Localiza a configuração do Cosmos
 
     if (cosmosConfig) {
-      console.log('[Cosmos Config] ⚙️ Configuração do Cosmos localizada no arquivo JSON.'); // Loga localização da config
+      console.log('[Cosmos Config] ⚙️ Configuração do Cosmos localizada no arquivo JSON:', cosmosConfig); // Loga localização da config
       return {
-        token: cosmosConfig.key_config || null,  // Recupera a chave/token de acesso do Cosmos
-        url: cosmosConfig.url_config || null,    // Recupera a URL/Host obrigatoriamente do arquivo
+        key_config: cosmosConfig.key_config || null, // Recupera a chave/token de acesso do Cosmos
+        url_config: cosmosConfig.url_config || null, // Recupera a URL/Host configurada no arquivo
       };
     }
   } catch (error) {
@@ -107,22 +121,33 @@ export async function fetchProductFromCosmos(gtin: string): Promise<CosmoProduct
   // Busca as configurações a partir do arquivo JSON local
   const fileConfig = await getCosmosConfigFromFile(); // Executa a leitura assíncrona das configurações no arquivo
 
+  // Mapeia os campos do arquivo JSON obtidos da função auxiliar
+  const cosmosUrl = fileConfig?.url_config; // Obtém a URL configurada no arquivo
+  const cosmosToken = fileConfig?.key_config || process.env.EXPO_PUBLIC_COSMOS_TOKEN; // Obtém o token/chave com fallback para ENV
+
+  // Logs detalhados de depuração para inspeção da montagem da URL
+  console.log(`\n=================== [COSMOS API - MONTAGEM DA URL] ===================`); // Exibe o separador no console
+  console.log(`[Cosmos Debug] 📄 URL bruta vinda do arquivo (url_config): "${cosmosUrl}"`); // Loga o valor exato lido da configuração
+  console.log(`[Cosmos Debug] 📦 GTIN fornecido para a busca: "${gtin}"`); // Loga o parâmetro GTIN recebido
+
   // Valida se a URL de configuração do arquivo existe
-  if (!fileConfig || !fileConfig.url) {
+  if (!cosmosUrl) {
     console.warn('[Cosmos API] ⛔ Falha: Nenhuma URL de configuração foi encontrada no arquivo config.json.'); // Informa que a URL é obrigatória
+    console.log(`=================== [COSMOS API - FIM] ===================\n`); // Exibe o fecho do log no console
     return null; // Interrompe a execução pois a URL configurada é obrigatória
   }
 
-  // Utiliza o token do arquivo JSON ou faz fallback para a variável de ambiente EXPO_PUBLIC_COSMOS_TOKEN
-  const cosmosToken = fileConfig.token || process.env.EXPO_PUBLIC_COSMOS_TOKEN; // Define o token de acesso
-  
   // Utiliza exclusivamente a URL definida no arquivo de configuração
-  const baseUrl = fileConfig.url.replace(/\/+$/, ''); // Remove barras no final da URL para padronização
-  const url = `${baseUrl}/gtins/${gtin}.json`;        // Monta a URL completa de consulta pelo GTIN
-  
+  const baseUrl = cosmosUrl.replace(/\/+$/, ''); // Remove barras no final da URL para padronização
+  const url = `${baseUrl}/${gtin}`; // Monta a URL completa de consulta pelo GTIN
+
+  console.log(`[Cosmos Debug] 🧼 Base URL tratada (sem barra final): "${baseUrl}"`); // Loga a URL limpa sem a barra no final
+  console.log(`[Cosmos Debug] 🎯 URL Final Montada: "${url}"`); // Loga a string final concatenada com o GTIN
+  console.log(`======================================================================\n`); // Exibe fecho da seção de logs de montagem
+
   const startTime = Date.now(); // Marca o tempo de início da requisição HTTP
 
-  console.log(`\n=================== [COSMOS API - INÍCIO] ===================`); // Exibe delimitador de início de log no console
+  console.log(`\n=================== [COSMOS API - INÍCIO REQUISIÇÃO] ===================`); // Exibe delimitador de início de log no console
   console.log(`[Cosmos API] 🚀 Solicitando consulta para o GTIN: ${gtin}`); // Loga o código GTIN que está sendo consultado
   console.log(`[Cosmos API] 🌐 Endpoint configurado: ${url}`); // Loga o endpoint vindo do arquivo de configuração
   console.log(`[Cosmos API] 🔑 Token utilizado: ${cosmosToken ? '*** (Configurado)' : 'Nenhum'}`); // Loga a presença do token sem expor a chave
@@ -130,7 +155,7 @@ export async function fetchProductFromCosmos(gtin: string): Promise<CosmoProduct
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json', // Define o tipo de conteúdo da requisição como JSON
-      'User-Agent': 'Cosmos-API-Request',   // Define o User-Agent exigido pela API do Cosmos
+      'User-Agent': 'Cosmos-API-Request', // Define o User-Agent exigido pela API do Cosmos
     };
 
     if (cosmosToken) {
@@ -163,9 +188,9 @@ export async function fetchProductFromCosmos(gtin: string): Promise<CosmoProduct
 
       const result: CosmoProductResult = {
         nm_product: data.description.toUpperCase(), // Converte o nome do produto para letras maiúsculas
-        id_group: finalGroupId,                     // Atribui o ID do grupo determinado (mapeado ou padrão)
-        gtin: gtin,                                 // Atribui o código GTIN pesquisado
-        tag: data.brand?.name || '',               // Atribui o nome da marca ou string vazia caso não exista
+        id_group: finalGroupId, // Atribui o ID do grupo determinado (mapeado ou padrão)
+        gtin: gtin, // Atribui o código GTIN pesquisado
+        tag: data.brand?.name || '', // Atribui o nome da marca ou string vazia caso não exista
       };
 
       console.log(`[Cosmos API] 🎯 Objeto final retornado:`, JSON.stringify(result, null, 2)); // Exibe no console o objeto formatado final

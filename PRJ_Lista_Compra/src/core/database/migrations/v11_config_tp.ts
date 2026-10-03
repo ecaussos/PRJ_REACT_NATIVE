@@ -8,6 +8,7 @@ export async function up(db: any) {
         (1, 'BD Local'),
         (2, 'BD Cloud'),
         (3, 'API Cosmos'),
-        (4, 'API Gemini');
+        (4, 'API Gemini'),
+        (5, 'API OpenFood');
     `);
 }
