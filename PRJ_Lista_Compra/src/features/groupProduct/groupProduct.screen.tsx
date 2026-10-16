@@ -22,7 +22,7 @@ export default function GroupProductScreen() {
     setShowForm(true); // Exibe o modal do formulário na tela
   };
   // Função para realizar a edição do registro
-  const handleOpenEdit = (id: number, name: string) => {
+  const handleOpenEdit = (id: string, name: string) => {
     form.startEditing(id, name); // Preenche o formulário com os daos do registro selecionado
     setShowForm(true);           // Exibe o modal do formulário na tela
   };

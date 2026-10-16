@@ -8,8 +8,8 @@ import { BuyHistIntent, BuyHistItem, SupplierOption } from './buyHist.types';
 export interface IBuyHistModel {
   fetchAll(): Promise<BuyHistWithEntity[]>;                                                    // Busca todos os itens da lista de compras
   fetchSupplier(): Promise<SupplierOption[]>;
-  update(id_hist_buy: number, id_product:number, qt_product: number, vl_product: number, id_supplier: number): Promise<void>; // Atualiza a quantidade e valor de um item na lista
-  delete(id_hist_buy: number): Promise<void>;                                                           // Remove um item específico da compra
+  update(id_hist_buy: string, id_product:string, qt_product: number, vl_product: number, id_supplier: string): Promise<void>; // Atualiza a quantidade e valor de um item na lista
+  delete(id_hist_buy: string): Promise<void>;                                                           // Remove um item específico da compra
 }
 
 export class BuyHistModel implements IBuyHistModel {
@@ -28,13 +28,13 @@ export class BuyHistModel implements IBuyHistModel {
   }
 
   // Atualiza a quantidade de um item existente na lista
-  async update(id_hist_buy: number, id_product: number, qt_product: number, vl_product: number, id_supplier: number): Promise<void> {
+  async update(id_hist_buy: string, id_product: string, qt_product: number, vl_product: number, id_supplier: string): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID
-    if (!id_hist_buy || id_hist_buy <= 0) {
+    if (!id_hist_buy || id_hist_buy.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um registro válido.');
     }
-    if (!id_product || id_product <= 0) {
+    if (!id_product || id_product.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um registro válido.');
     }
@@ -49,7 +49,7 @@ export class BuyHistModel implements IBuyHistModel {
       throw new Error('O valor deve ser um número maior ou igual a zero.');
     }
     // Valida se não existe dado preenchido e for menor que zero - ID fornecedor
-    if (!id_supplier || id_supplier <= 0) {
+    if (!id_supplier || id_supplier.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um registro válido.');
     }
@@ -58,9 +58,9 @@ export class BuyHistModel implements IBuyHistModel {
   }
 
   // Remove um item da lista pelo seu ID
-  async delete(id_hist_buy: number): Promise<void> {
+  async delete(id_hist_buy: string): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID    
-    if (!id_hist_buy || id_hist_buy <= 0) {
+    if (!id_hist_buy || id_hist_buy.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Registro inválido para exclusão.');
     }
@@ -121,17 +121,15 @@ export class BuyHistModel implements IBuyHistModel {
 
   // Regra de negócio: Constrói a intenção (Intent) para Salvar/Editar - Fábrica de ações (Action Factory)
   static buildSaveAction(
-    id_product: number | string,  // ID do produto ou do item da lista
+    id_product: string,           // ID do produto ou do item da lista
     qt_product: number | string,  // Valor do campo de texto com a quantidade informada
     vl_product: number | string,  // Valor do campo de texto com o preço informado
-    id_supplier: number | string, // ID do produto ou do item da lista
+    id_supplier: string,          // ID do produto ou do item da lista
     isEditing: boolean,           // Indica se o modal é de edição (true) ou novo cadastro (false)
-    editingId: number | null      // Indica se há ou não um valor (ID)
+    editingId: string | null      // Indica se há ou não um valor (ID)
   ): BuyHistIntent {
-    const parsedProduct = Number(id_product);   // Converte o ID para número
     const parsedQuantity = Number(qt_product);  // Converte a quantidade para número
     const parsedPrice = Number(vl_product);     // Converte o preço para número
-    const parsedSupplier = Number(id_supplier); // Converte o ID para número
     // Verificar se o valor é true e diferente de null - SE Edição=True OU SE houver um ID 
     if (isEditing && editingId !== null) {
       // Verdadeiro: Identifica que é uma edição
@@ -139,10 +137,10 @@ export class BuyHistModel implements IBuyHistModel {
         type: 'UPDATE' as const,        // Define o type utilizado no hook
         payload: {                      // Dados necessários para atualizar o registro
           id_hist_buy: editingId,
-          id_product: parsedProduct,    // Atribui o ID convertido
+          id_product: id_product,    // Atribui o ID convertido
           qt_product: parsedQuantity,   // Atribui a quantidade formatada como texto
           vl_product: parsedPrice,      // Atribui o preço formatado como texto
-          id_supplier: parsedSupplier,  // Atribui o ID convertido
+          id_supplier: id_supplier,  // Atribui o ID convertido
         },
       };
     }

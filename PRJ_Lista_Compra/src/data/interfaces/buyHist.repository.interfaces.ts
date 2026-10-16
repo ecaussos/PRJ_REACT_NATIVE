@@ -13,8 +13,8 @@ export interface IBuyHistRepository {
   findSupplier(): Promise<SupplierOption[]>;
 
   /** Atualiza quantidade de um item na compra */
-  update(id_hist_buy: number, id_product: number, qt_product: number, vl_product: number, id_supplier: number): Promise<void>;
+  update(id_hist_buy: string, id_product: string, qt_product: number, vl_product: number, id_supplier: string): Promise<void>;
 
   /** Remove item da compra */
-  delete(id_hist_buy: number): Promise<void>;
+  delete(id_hist_buy: string): Promise<void>;
 }

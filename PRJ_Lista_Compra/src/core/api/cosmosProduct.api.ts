@@ -1,10 +1,10 @@
 // src/core/api/cosmosProduct.api.ts
 import { ConfigModelInstance } from '../../features/config/config.model'; // Importa a instância do Model de Configuração para leitura do arquivo JSON local
-import { getDBConnection } from '../database/sqliteclient'; // Importa a função de conexão com o banco de dados SQLite local
+import { getLocalConnection } from '../database/localClient'; // Importa a função de conexão com o banco de dados SQLite local
 
 export interface CosmoProductResult {
   nm_product: string; // Nome/Descrição do produto retornado e formatado
-  id_group: number;   // ID do grupo/categoria ao qual o produto pertence
+  id_group: string;   // ID do grupo/categoria ao qual o produto pertence
   gtin: string;       // Código de barras (EAN/GTIN) do produto
   tag: string;        // Tag ou marca associada ao produto
 }
@@ -30,7 +30,7 @@ export interface CosmosFileConfig {
  * Consulta a tabela local `from_to_group` pelo NCM (ou prefixos do NCM)
  * Testa do código mais específico (8 dígitos) até o capítulo (2 dígitos)
  */
-async function findGroupIdByNcm(ncmCode?: string): Promise<number | null> {
+async function findGroupIdByNcm(ncmCode?: string): Promise<string | null> {
   if (!ncmCode) return null; // Retorna nulo se o código NCM não for informado
 
   const cleanNcm = ncmCode.replace(/\D/g, ''); // Remove caracteres não numéricos do NCM
@@ -46,13 +46,13 @@ async function findGroupIdByNcm(ncmCode?: string): Promise<number | null> {
   ); // Cria um array sem duplicações com os prefixos de NCM a serem testados
 
   try {
-    const db = await getDBConnection(); // Obtém a instância de conexão com o banco SQLite
+    const db = await getLocalConnection(); // Obtém a instância de conexão com o banco SQLite
 
     for (const code of prefixesToTry) { // Percorre a lista de prefixos NCM em ordem de especificidade
       const startTime = Date.now(); // Marca o tempo inicial da consulta para auditoria
       console.log(`[DB] 🔍 Consultando de-para NCM (id_external): "${code}"`); // Exibe log do prefixo consultado
 
-      const row = await db.getFirstAsync<{ id_group: number }>(
+      const row = await db.getFirstAsync<{ id_group: string }>(
         `SELECT id_group FROM from_to_group WHERE id_external = ?;`,
         [code]
       ); // Consulta a tabela de mapeamento buscando o grupo associado ao código NCM/prefixo
@@ -97,7 +97,7 @@ async function getCosmosConfigFromFile(): Promise<CosmosFileConfig | null> {
 
     // Procura na lista pelo id_tp_config === 3 ou pela descrição da API
     const cosmosConfig = configsList.find((cfg: any) => 
-      cfg.id_tp_config === 3 || 
+      cfg.id_tp_config === "4" || 
       cfg.ds_tp_config?.toUpperCase().includes('API COSMOS')
     ); // Localiza a configuração do Cosmos
 
@@ -167,9 +167,11 @@ export async function fetchProductFromCosmos(gtin: string): Promise<CosmoProduct
 
     if (!response.ok) { // Verifica se a resposta HTTP indica falha (status diferente de 2xx)
       if (response.status === 404) {
-        console.log(`[Cosmos API] ℹ️ Produto não localizado no Cosmos (404 Not Found).`); // Loga caso o produto não seja encontrado na base externa
+        console.log(`[Cosmos API] ℹ️ Produto não localizado no Cosmos (404 Not Found).`);
+      } else if (response.status === 429) {
+        console.warn(`[Cosmos API] ⛔ Limite de requisições / Rate limit atingido (HTTP 429). Verifique a cota do token na Bluesoft.`);
       } else {
-        console.warn(`[Cosmos API] ⚠️ Resposta com status: ${response.status}`); // Loga status HTTP de erro inesperado
+        console.warn(`[Cosmos API] ⚠️ Resposta com status: ${response.status}`);
       }
       console.log(`=================== [COSMOS API - FIM] ===================\n`); // Exibe delimitador de fim do log
       return null; // Retorna nulo se a requisição falhar ou o produto não existir
@@ -184,7 +186,7 @@ export async function fetchProductFromCosmos(gtin: string): Promise<CosmoProduct
       const idGroup = await findGroupIdByNcm(data.ncm?.code); // Tenta obter o id_group correspondente ao NCM retornado
 
       // Se não encontrar no de-para local, usa o grupo padrão (10)
-      const finalGroupId = idGroup ?? 10; // Utiliza o id_group mapeado ou 10 como valor de fallback padrão
+      const finalGroupId = idGroup ?? "10"; // Utiliza o id_group mapeado ou 10 como valor de fallback padrão
 
       const result: CosmoProductResult = {
         nm_product: data.description.toUpperCase(), // Converte o nome do produto para letras maiúsculas

@@ -31,7 +31,7 @@ export default function BuyHistScreen() {
   /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
 
   // Função para realizar a edição do registro
-  const handleOpenEditModal = ( id: number, Product: number, quantity: number, price: number, supplier?: number | null) => {
+  const handleOpenEditModal = ( id: string, Product: string, quantity: number, price: number, supplier?: string | null) => {
     console.log("=== [ACTION LOG] ABRINDO EDIÇÃO ===");
     console.log("ID Histórico:", id);
     console.log("ID Produto:", Product);

@@ -8,11 +8,10 @@ import {
 // Contrato/Interface do repositório para garantia do SOLID (Inversão de Dependência)
 export interface IGroupProductRepository {
   findAll(): Promise<GroupProductEntity[]>;
-  findById(id_group: number): Promise<GroupProductEntity | null>;
+  findById(id_group: string): Promise<GroupProductEntity | null>;
   findByNameExact(name: string): Promise<GroupProductEntity | null>;
   findByName(nameQuery: string): Promise<Pick<GroupProductEntity, 'id_group' | 'nm_group'>[]>;
-  findById(query: number):Promise<GroupProductEntity | null>;
   create(group: CreateGroupProductDTO): Promise<GroupProductEntity>;
-  update(id_group: number, group: UpdateGroupProductDTO): Promise<void>;
-  delete(id_group: number): Promise<void>;
+  update(id_group: string, group: UpdateGroupProductDTO): Promise<void>;
+  delete(id_group: string): Promise<void>;
 }

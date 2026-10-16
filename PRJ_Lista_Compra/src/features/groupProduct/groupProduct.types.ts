@@ -6,7 +6,7 @@ export type GroupProduct = GroupProductEntity;
 
 // DTO para retorno de buscas parciais por nome na caixa de pesquisa
 export interface GroupProductSearchResult {
-  id_group: number; // ID único do fornecedo retornado
+  id_group: string; // ID único do fornecedo retornado
   nm_group: string; // Nome do fornecedo retornado
 }
 
@@ -43,7 +43,7 @@ export interface GroupProductFormProps {
 export interface GroupProductItemProps {
   GroupProduct: GroupProductEntity;                   // Dados para exibição
   onEdit: (GroupProduct: GroupProductEntity) => void; // Ação para editar campos e dados para edição
-  onDelete: (id: number) => void;                     // Ação para deletar registro pelo ID
+  onDelete: (id: string) => void;                     // Ação para deletar registro pelo ID
 }
 
 // -------- DTOs para os Payloads das Intenções -------- //
@@ -55,7 +55,7 @@ export interface CreatePayload {
 
 // Dados necessários para atualizar uma configuração existente
 export interface UpdatePayload extends CreatePayload {
-  id_group: number; // ID do grupo na compra
+  id_group: string; // ID do grupo na compra
 }
 
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
@@ -72,4 +72,4 @@ export type GroupProductIntent =
   | { type: 'LOAD' }                            // Ação para carregar os dados
   | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
   | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
-  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
+  | { type: 'DELETE'; payload: string }         // Ação para deletar registro pelo ID

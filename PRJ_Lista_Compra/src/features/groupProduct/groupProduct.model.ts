@@ -11,8 +11,8 @@ export interface IGroupProductModel {
   findByName(query: string): Promise<GroupProductSearchResult[]>;       // Assinatura para buscar parcial por nome
   findById(query: number):Promise<GroupProductEntity | null>;           // Assinatura para buscar exatamente por ID
   create(nm_group: string): Promise<GroupProductEntity>;                // Assinatura para criação
-  update(id_group: number, data: { nm_group: string }): Promise<void>;  // Assinatura para atualização
-  delete(id_group: number): Promise<void>;                              // Assinatura para remoção
+  update(id_group: string, data: { nm_group: string }): Promise<void>;  // Assinatura para atualização
+  delete(id_group: string): Promise<void>;                              // Assinatura para remoção
 }
 
 export class GroupProductModel {
@@ -25,9 +25,9 @@ export class GroupProductModel {
   }
 
   // Função para bucar os registro filtrando exatamente pelo ID
-  async findById(id: number): Promise<GroupProductEntity | null> {
+  async findById(id: string): Promise<GroupProductEntity | null> {
     // // Valida se é um número inteiro válido e maior que zero
-    if (!Number.isInteger(id) || id <= 0){
+    if (!id || id.length <= 0){
       return null; // Retorna nulo se a busca for vazia após a limpeza
     }                     
     return await this.repository.findById(id); // Executa a busca no repositório
@@ -68,7 +68,7 @@ export class GroupProductModel {
   }
 
   // Função para atualizar e validar antes de salvar no respositório
-  async update(id_group: number, data: { nm_group: string }): Promise<void> {
+  async update(id_group: string, data: { nm_group: string }): Promise<void> {
     // Remove os espaços extras do início e fim da string
     const cleanName = data.nm_group.trim();
     // Valida que o id não está entre 1 e 7 (Bloqueado)
@@ -95,7 +95,7 @@ export class GroupProductModel {
   }
 
   // Função para deletar o registro utilizando o ID
-  async delete(id_group: number): Promise<void> {
+  async delete(id_group: string): Promise<void> {
     if (GroupProductModel.isSystemDefault(id_group)) {
       // Verdadeiro: Gerar mensagem informativa      
       throw new Error('Não é permitido alterar os registros padrão do sistema.');
@@ -111,15 +111,15 @@ export class GroupProductModel {
   }
 
   // Regra de negócio: Valida se o registro pertence ao padrão do sistema (IDs 1 a 10)
-  static isSystemDefault(id_group: number): boolean {
-    return id_group <= 10;
+  static isSystemDefault(id_group: string): boolean {
+    return id_group <= "10";
   }
 
   // Regar de negócio: Constrói a intenção (Intent) para Salvar/Edita - Fábrica de ações (Action Factory)
   static buildSaveAction(
     name: string,             // Valor do campo de texto com o nome do registro
     isEditing: boolean,       // Indica se o modal é de edição (true) ou novo cadastro (false)
-    editingId: number | null  // Indica se se há ou não um valor (ID)
+    editingId: string | null  // Indica se se há ou não um valor (ID)
   ): GroupProductIntent {
     // Remove os espaços extras do início e fim da string
     const cleanName = name.trim();

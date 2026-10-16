@@ -1,6 +1,7 @@
 // src/features/config/config.hook.ts
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
+import { resetDatabaseConnection } from '../../core/database/database';
 import { ConfigModel, ConfigModelInstance } from './config.model';
 import { ConfigIntent, ConfigState } from './config.types';
 
@@ -24,7 +25,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
   const [stSsl, setStSsl] = useState(0);                            // Armazena o status do SSL (1 = ativo, 0 = inativo)
   const [stConfig, setStConfig] = useState(1);                      // Armazena o status da configuração (1 = ativo, 0 = inativo)
   const [searchText, setSearchText] = useState('');                 // Armazena o termo para filtragem na listagem
-  const [editingId, setEditingId] = useState<number | null>(null);  // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [editingId, setEditingId] = useState<string | null>(null);  // Armazena o ID do registro em edição (null indica novo cadastro)
 
   // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
@@ -127,6 +128,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
     try {
       const success = await model.createConfigFile();                               // Executa a criação do arquivo JSON via Model
       if (success) {
+        resetDatabaseConnection();                                                  // Limpa o cache de conexão com o BD
         Alert.alert('Sucesso', 'Arquivo de configuração criado com sucesso!');      // Exibe alerta nativo de confirmação
         setState(prev => ({ ...prev, hasConfigFile: true }));                       // Atualiza estado indicando que o arquivo existe
         await dispatch({ type: 'LOAD' });                                           // Recarrega os dados após a criação do arquivo
@@ -231,7 +233,7 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
   };
 
   // Função para apresentar o modal de confirmação de exclusão
-  const handleDeleteData = (id: number, label: string) => {                           // Recebe ID e rótulo/descrição do item para exibição na mensagem
+  const handleDeleteData = (id: string, label: string) => {                           // Recebe ID e rótulo/descrição do item para exibição na mensagem
     Alert.alert(                                                                      // Exibe alerta de confirmação nativo
       'Excluir',                                                                      // Título da caixa de diálogo
       `Deseja realmente excluir a configuração "${label}"?`,                          // Mensagem de confirmação com a descrição do item
@@ -276,8 +278,8 @@ export function useConfigViewModel(model: ConfigModel = ConfigModelInstance) {
 
   // Função para preencher os campos e ativar o modo de edição
   const startEditing = (
-    id: number,                                                        // ID do registro de configuração que será editado
-    tpConfigVal: number,                                               // Valor numérico do tipo de configuração
+    id: string,                                                        // ID do registro de configuração que será editado
+    tpConfigVal: string,                                               // Valor numérico do tipo de configuração
     urlConfigVal: string | null,                                       // URL ou Host cadastrado (pode ser nulo)
     portConfigVal: number | null,                                      // Porta de conexão cadastrada (pode ser nula)
     userConfigVal: string | null,                                      // Usuário cadastrado (pode ser nulo)

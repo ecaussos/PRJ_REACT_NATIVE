@@ -6,7 +6,7 @@ export type BuyList = BuyListEntity;
 
 // DTO para retorno de buscas
 export interface ProductSearchResult {
-  id_product: number;             // Id único do produto retornado
+  id_product: string;             // Id único do produto retornado
   nm_product: string;             // Nome do produto retornado
   cd_product_gtin: string | null; // Código do produto retornado
   nm_group?: string | null;       // Nome do grupo do produto retornado
@@ -60,13 +60,13 @@ export interface BuyListSearchProps {
 
 // Dados necessários para criar uma nova configuração
 export interface CreatePayload {
-  id_product: number; // ID do produto na compra
+  id_product: string; // ID do produto na compra
   qt_product: number; // Quantidade de produto na compra
 }
 
 // Dados necessários para atualizar uma configuração existente
 export interface UpdatePayload extends CreatePayload {
-  id_list_buy: number; // ID do produto na compra
+  id_list_buy: string; // ID do produto na compra
 }
 
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
@@ -86,5 +86,5 @@ export type BuyListIntent =
   | { type: 'LOAD' }                            // Intenção para carregar
   | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
   | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
-  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
+  | { type: 'DELETE'; payload: string }         // Ação para deletar registro pelo ID
   | { type: 'CLEAR' }                           // Intenção para excluir todos

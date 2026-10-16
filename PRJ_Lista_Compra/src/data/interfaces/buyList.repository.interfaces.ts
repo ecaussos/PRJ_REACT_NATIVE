@@ -21,7 +21,7 @@ export interface IBuyListRepository {
   findByName(nm_product: string): Promise<ProductSearchResult[]>;
 
   /** Verifica se o produto já está na lista */
-  findByProductId(id_product: number): Promise<BuyListEntity | null>;
+  findByProductId(id_product: string): Promise<BuyListEntity | null>;
 
   /** Verifica se existe compra ativa, tabela buy com registro */
   findByActiveBuy(): Promise<boolean>;
@@ -30,10 +30,10 @@ export interface IBuyListRepository {
   create(item: CreateBuyListDTO): Promise<void>;
 
   /** Atualiza quantidade de um item da lista */
-  update(id_list_buy: number, qt_product: number): Promise<void>;
+  update(id_list_buy: string, qt_product: number): Promise<void>;
 
   /** Remove item individual */
-  delete(id_list_buy: number): Promise<void>;
+  delete(id_list_buy: string): Promise<void>;
 
   /** Limpa toda a lista */
   clearList(): Promise<void>;

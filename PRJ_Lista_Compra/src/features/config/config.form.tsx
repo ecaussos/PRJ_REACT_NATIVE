@@ -180,7 +180,7 @@ export function ConfigItem({
   onDelete,        // Função disparada ao clicar no botão de excluir
 }: {
   configTypeLabel?: string;     // Descrição do tipo obtido pelo JOIN (opcional)
-  tpConfig: number;             // ID do Tipo de Configuração
+  tpConfig: string;             // ID do Tipo de Configuração
   urlConfig?: string | null;    // URL ou Host da configuração
   portConfig?: number | null;   // Porta de conexão
   userConfig?: string | null;   // Usuário de autenticação
@@ -281,20 +281,22 @@ export default function ConfigForm({
   const isBdLocal = selectedType === 1;
   // Regra BD Cloud (2): Exibe todos os campos
   const isBdCloud = selectedType === 2;
+  // Regra BD Cloud (2): Exibe todos os campos
+  const isBdSync = selectedType === 3;
   // Regra API Cosmos (3): Exibe URL/Host e Chave de Acesso
-  const isApiCosmos = selectedType === 3;
+  const isApiCosmos = selectedType === 4;
   // Regra API Gemini (4): Exibe apenas Chave de Acesso
-  const isApiGemini = selectedType === 4;
-  // Regra API Gemini (4): Exibe apenas Chave de Acesso
-  const isScraping = selectedType === 5;
+  const isApiGemini = selectedType === 5;
+  // Regra API OpenFood (5): Exibe apenas Chave de Acesso
+  const isOpenFood = selectedType === 6;
 // Mapeamento dinâmico de permissão por campo
-  const showUrl = isBdCloud || isApiCosmos || isScraping;   // Exibe o campo de URL para BD Cloud e API Cosmos e Gemini
-  const showPort = isBdCloud;                               // Exibe o campo de Porta apenas para BD Cloud
-  const showUser = isBdCloud;                               // Exibe o campo de Usuário apenas para BD Cloud
-  const showKey = isBdCloud || isApiCosmos || isApiGemini;  // Exibe a Chave para BD Cloud, Cosmos e Gemini
-  const showVers = isApiGemini ;                            // Exibe a versão para BD Cloud, Cosmos e Gemini
-  const showSsl = isBdCloud;                                // Exibe a opção de SSL apenas para BD Cloud
-  const showStConfig = isTypeSelected;                      // O status da configuração aparece para qualquer tipo selecionado
+  const showUrl = isBdCloud || isApiCosmos || isOpenFood;  // Exibe o campo de URL para BD Cloud e API Cosmos e Gemini
+  const showPort = isBdCloud;                                             // Exibe o campo de Porta apenas para BD Cloud
+  const showUser = isBdCloud;                                             // Exibe o campo de Usuário apenas para BD Cloud
+  const showKey = isBdCloud || isApiCosmos || isApiGemini;                // Exibe a Chave para BD Cloud, Cosmos e Gemini
+  const showVers = isApiGemini ;                                          // Exibe a versão para BD Cloud, Cosmos e Gemini
+  const showSsl = isBdCloud;                                              // Exibe a opção de SSL apenas para BD Cloud
+  const showStConfig = isTypeSelected || isBdSync;                                    // O status da configuração aparece para qualquer tipo selecionado
 
   // -------- MONTAGEM DO FORMULÁRIO NA TELA -------- //
   return (

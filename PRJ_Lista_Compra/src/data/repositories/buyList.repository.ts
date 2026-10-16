@@ -1,5 +1,7 @@
 // src/data/repositories/buyList.repository.ts
-import { getDBConnection } from '../../core/database/sqliteclient';
+
+import * as Crypto from 'expo-crypto';
+import { getActiveDatabase } from '../../core/database/database';
 import { ProductSearchResult } from '../../features/buyList/buyList.types';
 import {
   BuyListEntity,
@@ -12,19 +14,24 @@ export { IBuyListRepository };
 
 export class BuyListRepository implements IBuyListRepository {
 
-  findAll(): Promise<BuyListItemWithProductEntity[]> {
-    throw new Error('Method not implemented.');
+  // Alias para manter compatibilidade com a interface IBuyListRepository
+  async findAll(): Promise<BuyListItemWithProductEntity[]> {
+    return this.findAllWithProduct();
   }
-  // Buscar todos os itens da lista de compras (com dados do produto e grupo via LEFT JOIN)
+
+  // Buscar todos os itens ativos da lista de compras (com dados do produto e grupo via LEFT JOIN)
   async findAllWithProduct(): Promise<BuyListItemWithProductEntity[]> {
     try {
-      const db = await getDBConnection();
+      const db = await getActiveDatabase();
       const query = `
         SELECT 
           l.id_list_buy, 
           l.id_product, 
           l.qt_product, 
           l.dt_list_buy,
+          l.at_updated,
+          l.at_delete,
+          l.st_sync,
           p.nm_product,
           p.cd_product_gtin,
           p.id_group,
@@ -32,26 +39,27 @@ export class BuyListRepository implements IBuyListRepository {
         FROM list_buy l
         INNER JOIN product p ON l.id_product = p.id_product
         LEFT JOIN group_product g ON p.id_group = g.id_group
+        WHERE l.at_delete IS NULL AND p.at_delete IS NULL
         ORDER BY g.nm_group ASC, p.nm_product ASC;
       `;
       const result = await db.getAllAsync<BuyListItemWithProductEntity>(query);
-      return result;
+      return result || [];
     } catch (error: any) {
       throw new Error(`Erro ao buscar itens da lista de compras: ${error.message}`);
     }
   }
 
-// Buscar produto por Código de Barras exato
+  // Buscar produto ativo por Código de Barras exato
   async findByBarcode(cd_product_gtin: string): Promise<ProductSearchResult | null> {
     try {
-      const db = await getDBConnection();
+      const db = await getActiveDatabase();
       const query = `
         SELECT 
           id_product, 
           nm_product, 
           cd_product_gtin
         FROM product
-        WHERE cd_product_gtin = ?;
+        WHERE cd_product_gtin = ? AND at_delete IS NULL;
       `;
       return await db.getFirstAsync<ProductSearchResult>(query, [cd_product_gtin]);
     } catch (error: any) {
@@ -59,10 +67,10 @@ export class BuyListRepository implements IBuyListRepository {
     }
   }
 
-  // Buscar produtos por Nome (parcial com LIKE)
+  // Buscar produtos ativos por Nome (parcial com LIKE)
   async findByName(nm_product: string): Promise<ProductSearchResult[]> {
     try {
-      const db = await getDBConnection();
+      const db = await getActiveDatabase();
       const query = `
         SELECT 
           p.id_product, 
@@ -71,7 +79,7 @@ export class BuyListRepository implements IBuyListRepository {
           g.nm_group
         FROM product p
         LEFT JOIN group_product g ON p.id_group = g.id_group
-        WHERE p.nm_product LIKE ?
+        WHERE p.nm_product LIKE ? AND p.at_delete IS NULL
         ORDER BY p.nm_product ASC;
       `;
       const searchName = `%${nm_product.trim()}%`;
@@ -82,10 +90,10 @@ export class BuyListRepository implements IBuyListRepository {
   }
 
   // Verificar se um produto já existe na lista de compras ativa
-  async findByProductId(id_product: number): Promise<BuyListEntity | null> {
+  async findByProductId(id_product: string): Promise<BuyListEntity | null> {
     try {
-      const db = await getDBConnection();
-      const query = `SELECT * FROM list_buy WHERE id_product = ?;`;
+      const db = await getActiveDatabase();
+      const query = `SELECT * FROM list_buy WHERE id_product = ? AND at_delete IS NULL;`;
       const result = await db.getFirstAsync<BuyListEntity>(query, [id_product]);
       return result || null;
     } catch (error: any) {
@@ -95,10 +103,9 @@ export class BuyListRepository implements IBuyListRepository {
 
   async findByActiveBuy(): Promise<boolean> {
     try {
-      const db = await getDBConnection();
-      // Utiliza o getFirstAsync para obter o resultado da agregação COUNT
+      const db = await getActiveDatabase();
       const result = await db.getFirstAsync<{ total: number }>(
-        'SELECT COUNT(*) as total FROM buy'
+        'SELECT COUNT(*) as total FROM buy WHERE at_delete IS NULL;'
       );
 
       return (result?.total ?? 0) > 0;
@@ -107,51 +114,93 @@ export class BuyListRepository implements IBuyListRepository {
     }
   }
 
-  // Adicionar um novo item à lista de compras usando o DTO
+  // Adicionar um novo item à lista de compras definindo at_updated e st_sync = 1
   async create(item: CreateBuyListDTO): Promise<void> {
     try {
-      const db = await getDBConnection();
+      const db = await getActiveDatabase();
+      const createId = Crypto.randomUUID();
+      const generatedId = createId.substring(0, 8);
+      const nowIso = new Date().toISOString();
+
       const query = `
-        INSERT INTO list_buy (id_product, qt_product, dt_list_buy)
-        VALUES (?, ?, ?);
+        INSERT INTO list_buy (
+          id_list_buy, 
+          id_product, 
+          qt_product, 
+          dt_list_buy,
+          at_updated,
+          at_delete,
+          st_sync
+        ) VALUES (?, ?, ?, ?, ?, NULL, 1);
       `;
       await db.runAsync(query, [
+        generatedId,
         item.id_product,
         item.qt_product,
         item.dt_list_buy,
+        nowIso,
       ]);
+      console.log(`[BuyListRepository] ✅ Item ${generatedId} inserido na lista.`);
     } catch (error: any) {
       throw new Error(`Erro ao inserir item na lista de compras: ${error.message}`);
     }
   }
 
-  // Atualizar a quantidade de um item existente
-  async update(id_list_buy: number, qt_product: number): Promise<void> {
+  // Atualizar a quantidade de um item existente marcando at_updated e st_sync = 1
+  async update(id_list_buy: string, qt_product: number): Promise<void> {
     try {
-      const db = await getDBConnection();
-      const query = `UPDATE list_buy SET qt_product = ? WHERE id_list_buy = ?;`;
-      await db.runAsync(query, [qt_product,id_list_buy]);
+      const db = await getActiveDatabase();
+      const nowIso = new Date().toISOString();
+
+      const query = `
+        UPDATE list_buy 
+        SET qt_product = ?, 
+            at_updated = ?, 
+            st_sync = 1 
+        WHERE id_list_buy = ?;
+      `;
+      await db.runAsync(query, [qt_product, nowIso, id_list_buy]);
+      console.log(`[BuyListRepository] ✏️ Item ${id_list_buy} atualizado.`);
     } catch (error: any) {
       throw new Error(`Erro ao atualizar quantidade na lista: ${error.message}`);
     }
   }
 
-  // Remover um item específico da lista
-  async delete(id_list_buy: number): Promise<void> {
+  // Soft delete de um item específico da lista
+  async delete(id_list_buy: string): Promise<void> {
     try {
-      const db = await getDBConnection();
-      const query = `DELETE FROM list_buy WHERE id_list_buy = ?;`;
-      await db.runAsync(query, [id_list_buy]);
+      const db = await getActiveDatabase();
+      const nowIso = new Date().toISOString();
+
+      const query = `
+        UPDATE list_buy 
+        SET at_delete = ?, 
+            at_updated = ?, 
+            st_sync = 2 
+        WHERE id_list_buy = ?;
+      `;
+      await db.runAsync(query, [nowIso, nowIso, id_list_buy]);
+      console.log(`[BuyListRepository] 🗑️ Soft delete no item ${id_list_buy}.`);
     } catch (error: any) {
       throw new Error(`Erro ao remover item da lista: ${error.message}`);
     }
   }
 
-  // Limpar toda a lista de compras
+  // Limpeza via Soft Delete de toda a lista de compras
   async clearList(): Promise<void> {
     try {
-      const db = await getDBConnection();
-      await db.runAsync(`DELETE FROM list_buy;`);
+      const db = await getActiveDatabase();
+      const nowIso = new Date().toISOString();
+
+      const query = `
+        UPDATE list_buy 
+        SET at_delete = ?, 
+            at_updated = ?, 
+            st_sync = 2 
+        WHERE at_delete IS NULL;
+      `;
+      await db.runAsync(query, [nowIso, nowIso]);
+      console.log(`[BuyListRepository] 🧹 Soft delete aplicado em toda a lista.`);
     } catch (error: any) {
       throw new Error(`Erro ao limpar a lista de compras: ${error.message}`);
     }

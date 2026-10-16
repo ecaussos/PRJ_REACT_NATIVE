@@ -2,22 +2,25 @@
 
 // 1. Entidade que reflete a tabela 'config_type' no SQLite
 export interface ConfigTypeEntity {
-  id_tp_config: number;            // ID do tipo de configuração
+  id_tp_config: string;            // ID do tipo de configuração
   ds_tp_config: string;            // Descrição do tipo (ex: 'BD Local', 'API Gemini')
 }
 
 // 2. Entidade base que reflete a tabela 'config' no SQLite
 export interface ConfigEntity {
-  id_config: number;               // ID gerado automaticamente (INTEGER)
-  id_tp_config: number;            // Chave estrangeira para o tipo de configuração (INTEGER)
-  url_config: string | null;       // URL ou Host da configuração
-  port_config: number | null;      // Porta de conexão
-  user_config: string | null;      // Usuário de autenticação
-  key_config: string | null;       // Chave de acesso ou senha
-  vers_config: string | null;      // versão de acesso
-  st_ssl: number;                  // Status do SSL (1 = ativo, 0 = inativo)
-  st_config: number;               // Status da configuração (1 = ativo, 0 = inativo)
-  dt_config?: string;              // Data de criação/registro no SQLite
+  id_config: string;          // ID gerado automaticamente (INTEGER)
+  id_tp_config: string;       // Chave estrangeira para o tipo de configuração (INTEGER)
+  url_config: string | null;  // URL ou Host da configuração
+  port_config: number | null; // Porta de conexão
+  user_config: string | null; // Usuário de autenticação
+  key_config: string | null;  // Chave de acesso ou senha
+  vers_config: string | null; // versão de acesso
+  st_ssl: number;             // Status do SSL (1 = ativo, 0 = inativo)
+  st_config: number;          // Status da configuração (1 = ativo, 0 = inativo)
+  dt_config?: string;         // Data de criação/registro no SQLite
+  at_updated?: string | null; // Sincronização Data/Hora última atualização
+  at_delete?: string | null;  // Sincronização Data/Hora da exclusão lógica (Soft Delete)
+  st_sync?: number;           // Sincronização Status (0: synced, 1: pending, 2: pending delete)
 }
 
 // 3. DTO para criação de novos registros (Omite a chave primária e o carimbo de data autogerado)

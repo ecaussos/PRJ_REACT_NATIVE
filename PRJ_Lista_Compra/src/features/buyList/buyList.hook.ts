@@ -19,8 +19,8 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
   const [productId, setProductId] = useState('');                                   // Armazena o valor digitado no campo de grupo
   const [quantity, setQuantity] = useState('1');                                    // Armazena o valor digitado no campo quantidade
   const [searchText, setSearchText] = useState('');                                 // Armazena o termo de filtragem na listagem
-  const [editingId, setEditingId] = useState<number | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
+  const [editingId, setEditingId] = useState<string | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
   const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca de produto código/nome
 
   // Reseta os campos do formulário para o estado inicial
@@ -140,7 +140,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
     }
     const isEditing = editingId !== null;                               // Avalia se está em modo de edição (true) ou criação (false)
     const action = BuyListModel.buildSaveAction(                        // Monta o objeto de intenção para gravação
-      productId, quantity, isEditing, editingId                         // Passa os valores digitados no formulário
+      productId, quantity, isEditing, editingId ?? ''                   // Passa os valores digitados no formulário
     );
     try {
       await dispatch(action);                                           // Envia a ação MVI para processamento
@@ -156,7 +156,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
   };
 
   // Função para apresentar o modal de confirmação de exclusão
-  const handleDeleteData = (id: number, name: string) => {                      // Recebe ID e nome do item para exibição na mensagem
+  const handleDeleteData = (id: string, name: string) => {                      // Recebe ID e nome do item para exibição na mensagem
     Alert.alert(                                                                // Exibe alerta de confirmação nativo
       'Excluir',                                                                // Título da caixa de diálogo
       `Deseja realmente excluir o registro "${name}"?`,                         // Mensagem de confirmação com o nome do item
@@ -315,7 +315,7 @@ export function useBuyListViewModel(model: BuyListModel = BuyListModelInstance) 
   });
 
   // Função de edição para preencher campos do formulário
-  const startEditing = (id: number, productId:number, quantity: number) => {
+  const startEditing = (id: string, productId: string, quantity: number) => {
     setEditingId(id);               // Salva o ID do item
     setProductId(String(productId)); // Salva o ID do produto no estado
     setQuantity(String(quantity));  // Preenche a quantidade no campo

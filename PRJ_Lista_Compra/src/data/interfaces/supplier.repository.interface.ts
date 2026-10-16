@@ -8,10 +8,10 @@ import {
 // Contrato/Interface do repositório para garantia do SOLID (Inversão de Dependência)
 export interface ISupplierRepository {
   findAll(): Promise<SupplierEntity[]>;
-  findById(id_supplier: number): Promise<SupplierEntity | null>;
+  findById(id_supplier: string): Promise<SupplierEntity | null>;
   findByNameExact(name: string): Promise<SupplierEntity | null>;
   findByName(nameQuery: string): Promise<Pick<SupplierEntity, 'id_supplier' | 'nm_supplier'>[]>;
   create(supplier: CreateSupplierDTO): Promise<SupplierEntity>;
-  update(id_supplier: number, supplier: UpdateSupplierDTO): Promise<void>;
-  delete(id_supplier: number): Promise<void>;
+  update(id_supplier: string, supplier: UpdateSupplierDTO): Promise<void>;
+  delete(id_supplier: string): Promise<void>;
 }

@@ -15,7 +15,7 @@ export function useGroupProductViewModel(model: GroupProductModel = groupProduct
   // Estados locais para controle de formulário, campo de busca e edição
   const [name, setName] = useState('');                                            // Armazena o valor digitado no campo de nome
   const [searchText, setSearchText] = useState('');                                // Armazena o termo de busca para filtragem na listagem
-  const [editingId, setEditingId] = useState<number | null>(null);                 // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [editingId, setEditingId] = useState<string | null>(null);                 // Armazena o ID do registro em edição (null indica novo cadastro)
  
   // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
@@ -81,7 +81,7 @@ export function useGroupProductViewModel(model: GroupProductModel = groupProduct
       return false;                                                                // Para o processo e retorna falso
     }
     const isEditing = editingId !== null;                                          // Verificar se é edição (true) ou criação (false)
-    const action = GroupProductModel.buildSaveAction(name, isEditing, editingId);  // Cria o objeto da ação para salvar
+    const action = GroupProductModel.buildSaveAction(name, isEditing, editingId );  // Cria o objeto da ação para salvar
     try {                                                                          
       await dispatch(action);                                                      // Envia a ação para ser processada
       const successMessage = isEditing                                             // Escolhe a mensagem de acordo com a ação
@@ -96,7 +96,7 @@ export function useGroupProductViewModel(model: GroupProductModel = groupProduct
   };
 
   // Função para apresentar o modal de confirmação de operação - Delete
-  const handleDeleteData = (id: number, name: string) => {                         // Função e parametros recebidos
+  const handleDeleteData = (id: string, name: string) => {                         // Função e parametros recebidos
     Alert.alert(                                                                   // Tipo de mensagem                                                      
       'Excluir',                                                                   // Título da caixa de diálogo
       `Deseja realmente excluir o registro "${name}"?`,                            // Mensagem informativa
@@ -128,7 +128,7 @@ export function useGroupProductViewModel(model: GroupProductModel = groupProduct
   );
 
   // Função de edição para preencher campos do formulario
-  const startEditing = (id: number, name: string) => {                             // Inicia o modo de edição com o ID e nome selecionados
+  const startEditing = (id: string, name: string) => {                             // Inicia o modo de edição com o ID e nome selecionados
     setEditingId(id);                                                              // Salva o ID do item a ser editado
     setName(name);                                                                 // Preenche o campo de texto com o nome atual
   };

@@ -4,7 +4,7 @@ import { ConfigModelInstance } from '../../features/config/config.model';
 
 export interface GeminiProductResult {
   nm_product: string; // Nome oficial/comercial do produto formatado
-  id_group: number;   // ID do grupo/categoria mapeado na tabela
+  id_group: string;   // ID do grupo/categoria mapeado na tabela
   gtin: string;       // Código de barras (EAN/GTIN) do produto
   tag: string;        // Nome amigável/popular do produto sem a marca
 }
@@ -35,7 +35,7 @@ async function getGeminiConfigFromFile() {
 
     // Busca a configuração com id_tp_config === 4 ou descrição "API Gemini"
     const geminiConfig = configsList.find((cfg: any) =>
-      cfg.id_tp_config === 4 ||
+      cfg.id_tp_config === "5" ||
       cfg.ds_tp_config?.toUpperCase().includes('API GEMINI')
     );
 
@@ -133,7 +133,7 @@ export async function fetchProductInfoByGTIN(
 
       const result: GeminiProductResult = {
         nm_product: descMatch ? descMatch[1].trim().toUpperCase(): fallbackName,
-        id_group: groupMatch ? parseInt(groupMatch[1], 10) : 10,
+        id_group: groupMatch ? groupMatch[1]: "10",
         gtin,
         tag: tagMatch ? tagMatch[1].trim() : '',
       };

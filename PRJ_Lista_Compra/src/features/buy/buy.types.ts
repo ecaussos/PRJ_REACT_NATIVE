@@ -13,7 +13,7 @@ export type { SupplierEntity };
 
 // DTO para retorno de buscas
 export interface ProductSearchResult {
-  id_product: number;               // ID do produto
+  id_product: string;               // ID do produto
   nm_product: string;               // Nome do produto
   cd_product_gtin?: string | null;  // Código de barras GTIN/EAN (opcional)
   nm_group?: string | null;         // Nome da categoria/grupo do produto (opcional)
@@ -52,7 +52,7 @@ export interface BuyFilterProps {
 export interface BuyItemProps {
   item: BuyWithProductEntity;                           // Dados detalhados do item (com JOIN do produto)
   onEdit: (item: BuyWithProductEntity) => void;         // Ação para abrir modal de edição de quantidade
-  onDelete: (id_product: number, name: string) => void; // Ação para excluir o item específico
+  onDelete: (id_product: string, name: string) => void; // Ação para excluir o item específico
 }
 
 // Props do Modal para buscar Produto castrados por o código de barra (Adcionar a lista) - Câmera
@@ -90,14 +90,14 @@ export interface FinishBuyProps {
 
 // Dados necessários para criar uma nova configuração
 export interface CreatePayload {
-  id_product: number; // ID do produto na compra
+  id_product: string; // ID do produto na compra
   qt_product: number; // Quantidade de produto na compra
   vl_product: number;  // Valor do protudo na compra
 }
 
 // Dados necessários para atualizar uma configuração existente
 export interface UpdatePayload extends CreatePayload {
-  id_product: number; // ID do produto na compra
+  id_product: string; // ID do produto na compra
 }
 
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
@@ -115,5 +115,5 @@ export type BuyIntent =
   | { type: 'LOAD' }                            // Ação para carregar os dados
   | { type: 'CREATE'; payload: CreatePayload }  // Ação para criar novo registro
   | { type: 'UPDATE'; payload: UpdatePayload }  // Ação para atualizar registro existente
-  | { type: 'DELETE'; payload: number }         // Ação para deletar registro pelo ID
+  | { type: 'DELETE'; payload: string }         // Ação para deletar registro pelo ID
   | { type: 'CLEAR' }                           // Intenção para excluir todos

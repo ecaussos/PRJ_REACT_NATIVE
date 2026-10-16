@@ -20,8 +20,8 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
   const [quantity, setQuantity] = useState('1');                                    // Armazena o valor digitado no campo quantidade
   const [price, setPrice] = useState('0.00');                                       // Armazena o valor digitado no campo preço
   const [searchText, setSearchText] = useState('');                                 // Armazena o termo de filtragem na listagem
-  const [editingId, setEditingId] = useState<number | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar à lista - Código/Nome
+  const [editingId, setEditingId] = useState<string | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);  // Armazena o ID do produto para adicionar à lista - Código/Nome
   const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca do produto no modal por código/nome
   const [onlyWithoutPrice, setOnlyWithoutPrice] = useState(false);                  // Armazena o estado do filtro para produtos sem preço/zerados
   const [selectedGroup, setSelectedGroup] = useState<string>('');                   // Armazena o nome do grupo selecionado no filtro
@@ -67,7 +67,7 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
           break;
         }
         case 'DELETE': {
-          await model.delete(intent.payload.id_product);
+          await model.delete(intent.payload);
           const data = await model.fetchAll();
           setState(prev => ({ ...prev, items: data, loading: false }));
           break;
@@ -93,7 +93,7 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
     }
     const isEditing = editingId !== null;                               // Avalia se está em modo de edição (true) ou criação (false)
     const action = BuyModel.buildSaveAction(                            // Monta o objeto de intenção para gravação
-      productId, quantity, price, isEditing, editingId                  // Passa os valores digitados no formulário
+      productId, quantity, price, isEditing, editingId                // Passa os valores digitados no formulário
     );
     try {
       await dispatch(action);                                           // Envia a ação MVI para processamento
@@ -109,7 +109,7 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
   };
 
   // Função para apresentar o modal de confirmação de exclusão
-  const handleDeleteData = (id_product: number, nm_product: string) => {              // Recebe ID e nome do item para exibição na mensagem
+  const handleDeleteData = (id: string, nm_product: string) => {              // Recebe ID e nome do item para exibição na mensagem
     Alert.alert(                                                                      // Exibe alerta de confirmação nativo
       'Excluir',                                                                      // Título da caixa de diálogo
       `Deseja realmente excluir o registro "${nm_product}"?`,                         // Mensagem de confirmação com o nome do item
@@ -119,7 +119,7 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
           style: 'destructive',                                                       // Estilo visual de alerta
           onPress: async () => {                                                      // Ação executada ao confirmar exclusão
             try {
-              await dispatch({ type: 'DELETE', payload: { id_product }});              // Envia a intenção MVI de exclusão passando o ID
+              await dispatch({ type: 'DELETE', payload: id});              // Envia a intenção MVI de exclusão passando o ID
               Alert.alert('Sucesso', `Registro ${nm_product} excluído com sucesso!`); // Exibe mensagem após executar a operação
             } catch (err: any) {
               Alert.alert('Erro', err.message || 'Erro ao excluir o produto.');       // Exibe mensagem caso a operação falhe
@@ -322,7 +322,7 @@ export function useBuyViewModel(model: BuyModel = BuyModelInstance) {
   }, [state.items]);
 
   // Executa o envio final do registro de compras para o histórico e limpa as tabelas
-  const handleConfirmFinalize = useCallback((supplierId: number) => {
+  const handleConfirmFinalize = useCallback((supplierId: string) => {
     // 1. Aplica a Regra de Negócio: Não permite prosseguir se houver QUALQUER item sem valor válido
     if (!BuyModel.canFinalize(state.items)) {
       Alert.alert(
@@ -416,7 +416,7 @@ const availableGroups = useMemo(() => {                                         
   }, [state.items]);                                                              // Recalcula apenas quando a lista de itens for alterada
 
   // Prepara o formulário para modo de edição
-  const startEditing = (idProduct: number, quantity: number, price: number) => {
+  const startEditing = (idProduct: string, quantity: number, price: number) => {
     setEditingId(idProduct);          // Define o ID do produto em edição
     setProductId(String(idProduct));  // Converte e armazena o ID como texto
     setSelectedProductId(idProduct);  // Atualiza o produto selecionado no estado

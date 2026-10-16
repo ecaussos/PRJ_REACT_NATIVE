@@ -31,8 +31,8 @@ export function useBuyHistViewModel(model: BuyHistModel = BuyHistModelInstance) 
   const [price, setPrice] = useState('0.00');                                       // Armazena o valor digitado no campo preço
   const [supplierId, setSupplierId] = useState('');                                 // Armazena o valor digitado no campo preço
   const [searchText, setSearchText] = useState('');                                 // Armazena o termo de filtragem na listagem
-  const [editingId, setEditingId] = useState<number | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
+  const [editingId, setEditingId] = useState<string | null>(null);                  // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);  // Armazena o ID do produto para adicionar a lista - Código/Nome
   const [modalSearchText, setModalSearchText] = useState('');                       // Armazena o termo de busca de produto código/nome
   const [selectedGroup, setSelectedGroup] = useState<string>('');                   // Armazena o nome do grupo selecionado no filtro
   const [selectedSupplier, setSelectedSupplier] = useState<string>('');             // Armazena o nome do fornecedor selecionado no filtro
@@ -145,7 +145,7 @@ try {
   };
 
   // Função para apresentar o modal de confirmação de exclusão
-  const handleDeleteData = (id: number, name: string) => {                      // Recebe ID e nome do item para exibição na mensagem
+  const handleDeleteData = (id: string, name: string) => {                      // Recebe ID e nome do item para exibição na mensagem
     Alert.alert(                                                                // Exibe alerta de confirmação nativo
       'Excluir',                                                                // Título da caixa de diálogo
       `Deseja realmente excluir o registro "${name}"?`,                         // Mensagem de confirmação com o nome do item
@@ -224,12 +224,12 @@ try {
     }, [state.items]);
 
   // Função de edição para preencher campos do formulário
-  const startEditing = (id: number, product: number, quantity: number, price: number, supplier?: number | null) => {
+  const startEditing = (id: string, product: string, quantity: number, price: number, supplier?: string | null) => {
     setEditingId(id);                                                   // Preenche o ID do item sendo editado
     setProductId(String(product ?? ''));                                // Preenche o ID do produto convertido em texto
     setQuantity(String(quantity ?? '1'));                               // Preenche a quantidade convertida em texto
     setPrice(String(price ?? '0.00'));                                  // Preenche o preço convertido em texto
-    setSupplierId(supplier && supplier !== 0 ? String(supplier) : '');  // Preenche o ID do fornecedor convertido em texto
+    setSupplierId(supplier && supplier.length !== 0 ? supplier: '');    // Preenche o ID do fornecedor convertido em texto
   };
   
 // Cálculo total do valor usando a lista filtrada (filteredItems)

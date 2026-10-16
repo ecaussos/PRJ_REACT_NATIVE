@@ -10,12 +10,12 @@ export interface IBuyModel {
   fetchByName(name: string): Promise<ProductSearchResult[]>;                            // Busca produtos cadastrados filtrando pelo nome
   fetchByBarcode(barcode: string): Promise<ProductSearchResult>;                        // Busca produto cadastrado pelo código de barras
   searchProducts(query: string): Promise<ProductSearchResult[]>;                        // Pesquisa genérica de produtos por termo
-  create(id_product: number, qt_product?: number, vl_product?: number): Promise<void>;  // Adiciona um produto à lista informando ID, quantidade e preço
+  create(id_product: string, qt_product?: number, vl_product?: number): Promise<void>;  // Adiciona um produto à lista informando ID, quantidade e preço
   createBuyHist(item: CreateBuyHistDTO): Promise<void>;                                 // Adiciona registros no histórico no apos finalizar a compra
   createByBarcode(barcode: string): Promise<ProductSearchResult>;                       // Adiciona um produto diretamente pelo código de barras
-  update(id_product: number, qt_product: number, vl_product: number): Promise<void>;    // Atualiza a quantidade e valor de um item na lista
-  delete(id_product: number): Promise<void>;                                            // Remove um item específico da compra
-  deleteBuyList(id_product: number): Promise<void>;                                     // Remove um item específico da lista de compra
+  update(id_product: string, qt_product: number, vl_product: number): Promise<void>;    // Atualiza a quantidade e valor de um item na lista
+  delete(id_product: string): Promise<void>;                                            // Remove um item específico da compra
+  deleteBuyList(id_product: string): Promise<void>;                                     // Remove um item específico da lista de compra
   clear(): Promise<void>;                                                               // Remove todos os itens da lista de compras
 }
 
@@ -23,8 +23,8 @@ export class BuyModel implements IBuyModel {
   // Recebe o repositório por contrato (interface), facilitando testes e inversão de controle
   constructor(private repository: IBuyRepository) {} // Define a dependência por interface no construtor
     
-  async deleteBuyList(id_product: number): Promise<void> {
-    if (!id_product || id_product <= 0) {
+  async deleteBuyList(id_product: string): Promise<void> {
+    if (!id_product || id_product.length <= 0) {
       throw new Error('ID do produto inválido para exclusão na lista.');
     }
     await this.repository.deleteBuyList(id_product);
@@ -91,9 +91,9 @@ export class BuyModel implements IBuyModel {
   }
 
   // Função para criar registro e valida antes de salvar no repositório
-  async create(id_product: number, qt_product: number = 1, vl_product: number = 0.00): Promise<void> {
+  async create(id_product: string, qt_product: number = 1, vl_product: number = 0.00): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID
-    if (!id_product || id_product <= 0) {
+    if (!id_product || id_product.trim().length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um produto válido.');
     }
@@ -129,10 +129,10 @@ export class BuyModel implements IBuyModel {
   // Insere um novo registro de compra no histórico
   async createBuyHist(item: CreateBuyHistDTO): Promise<void> {
     // Validação básica dos campos antes de enviar ao repositório
-    if (!item.id_product || item.id_product <= 0) {
+    if (!item.id_product || item.id_product.trim().length <= 0) {
       throw new Error('ID do produto inválido para geração de histórico.');
     }
-    if (!item.id_supplier || item.id_supplier <= 0) {
+    if (!item.id_supplier || item.id_supplier.trim().length <= 0) {
       throw new Error('Fornecedor deve ser informado para registrar a compra.');
     }
     // Valida se não existe dado preenchido e for menor que zero - Quantidade
@@ -150,9 +150,9 @@ export class BuyModel implements IBuyModel {
   }
 
   // Atualiza a quantidade de um item existente na lista
-  async update(id_product: number, qt_product: number, vl_product: number): Promise<void> {
+  async update(id_product: string, qt_product: number, vl_product: number): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID
-    if (!id_product || id_product <= 0) {
+    if (!id_product || id_product.trim().length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um registro válido.');
     }
@@ -171,9 +171,9 @@ export class BuyModel implements IBuyModel {
   }
 
   // Remove um item da lista pelo seu ID
-  async delete(id_product: number): Promise<void> {
+  async delete(id_product: string): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID    
-    if (!id_product || id_product <= 0) {
+    if (!id_product || id_product.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Registro inválido para exclusão.');
     }
@@ -202,11 +202,11 @@ export class BuyModel implements IBuyModel {
   }
 
   // Regra de negócio: Valida dados de entrada
-  static isValid(productId: number | string, quantity: number | string, price: number | string): boolean {
-    const validProduct = Number(productId) > 0;   // Valida se o ID do produto é maior ou igual a zero
-    const validQty = Number(quantity) > 0;        // Valida se a quantidade é maior que zero 
-    const validPrc = Number(price) >= 0;          // Valida se o preço é maior ou igual a zero
-    return validProduct && validQty && validPrc;  // Retorna true somente se todas as regras forem satisfeitas
+  static isValid(productId: string | string, quantity: number | string, price: number | string): boolean {
+    const validProduct = (productId.trim().length) > 0; // Valida se o ID do produto é maior ou igual a zero
+    const validQty = Number(quantity) > 0;              // Valida se a quantidade é maior que zero 
+    const validPrc = Number(price) >= 0;                // Valida se o preço é maior ou igual a zero
+    return validProduct && validQty && validPrc;        // Retorna true somente se todas as regras forem satisfeitas
   }
 
   // Valida strings enviadas pelos inputs, convertendo-as em números. - parse(analisar)
@@ -264,13 +264,12 @@ export class BuyModel implements IBuyModel {
 
   // Regra de negócio: Constrói a intenção (Intent) para Salvar/Editar - Fábrica de ações (Action Factory)
   static buildSaveAction(
-    id_product: number | string,  // ID do produto ou do item da lista
+    id_product: string,           // ID do produto ou do item da lista
     qt_product: number | string,  // Valor do campo de texto com a quantidade informada
     vl_product: number | string,  // Valor do campo de texto com o preço informado
     isEditing: boolean,           // Indica se o modal é de edição (true) ou novo cadastro (false)
-    editingId: number | null      // Indica se há ou não um valor (ID)
+    editingId: string | null      // Indica se há ou não um valor (ID)
   ): BuyIntent {
-    const parsedId = Number(id_product);        // Converte o ID para número
     const parsedQuantity = Number(qt_product);  // Converte a quantidade para número
     const parsedPrice = Number(vl_product);     // Converte o preço para número
     // Verificar se o valor é true e diferente de null - SE Edição=True OU SE houver um ID 
@@ -279,7 +278,7 @@ export class BuyModel implements IBuyModel {
       return {
         type: 'UPDATE' as const,      // Define o type utilizado no hook
         payload: {                    // Dados necessários para atualizar o registro
-          id_product: parsedId,       // Atribui o id convertido
+          id_product: id_product,       // Atribui o id convertido
           qt_product: parsedQuantity, // Atribui a quantidade formatada como texto
           vl_product: parsedPrice,    // Atribui o preço formatado como texto
         },
@@ -289,7 +288,7 @@ export class BuyModel implements IBuyModel {
     return {
       type: 'CREATE' as const,      // Define o type utilizado no hook
       payload: {                    // Dados necessários para criar o registro
-        id_product: parsedId,       // Atribui o id do produto convertido    
+        id_product: id_product,       // Atribui o id do produto convertido    
         qt_product: parsedQuantity, // Atribui a quantidade convertida
         vl_product: parsedPrice,    // Atribui o valor convertido
       },

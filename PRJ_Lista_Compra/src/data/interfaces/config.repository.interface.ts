@@ -16,7 +16,7 @@ export interface IConfigRepository {
   findAll(): Promise<ConfigWithTypeEntity[]>;
 
   /** Busca uma configuração específica pelo seu ID */
-  findById(id_config: number): Promise<ConfigEntity | null>;
+  findById(id_config: string): Promise<ConfigEntity | null>;
 
   /** Retorna as opções de tipos de configuração cadastradas para vínculo na UI */
   findConfigType(): Promise<ConfigTypeOption[]>;
@@ -28,8 +28,8 @@ export interface IConfigRepository {
   create(config: CreateConfigDTO): Promise<ConfigEntity>;
 
   /** Atualiza uma configuração existente pelo ID */
-  update(id_config: number, config: UpdateConfigDTO): Promise<void>;
+  update(id_config: string, config: UpdateConfigDTO): Promise<void>;
 
   /** Remove uma configuração pelo ID */
-  delete(id_config: number): Promise<void>;
+  delete(id_config: string): Promise<void>;
 }

@@ -1,11 +1,11 @@
 // features/scannerQuick/scannerQuick.hook.tsx
 import { router } from 'expo-router'; // Importa o roteador para navegação de telas
-import { useCallback, useEffect, useState } from 'react'; // Importa os hooks do React
+import { useCallback, useEffect, useRef, useState } from 'react'; // Importa os hooks do React
 import { Alert } from 'react-native'; // Importa o componente de alerta nativo
 
 import { CosmoProductResult, fetchProductFromCosmos } from '../../core/api/cosmosProduct.api'; // Importa a API de busca no Cosmos
 import { fetchProductInfoByGTIN } from '../../core/api/geminiProduct.api'; // Importa a API de busca no Gemini
-import { fetchProductScraping } from '../../core/api/openFoodProduct.api'; // Importa a API de busca via Scraping
+import { fetchProductOpenFood } from '../../core/api/openFoodProduct.api'; // Importa a API de busca via OpenFood
 
 // Instâncias de Models
 import { BuyListModelInstance } from '../buyList/buyList.model'; // Importa a instância do model da lista de compras
@@ -26,7 +26,9 @@ export function useScannerQuickViewModel() {
   });
 
   // Lista local de grupos para popular o Picker/Select do modal
-  const [groups, setGroups] = useState<Array<{ id_group: number; nm_group: string }>>([]); // Estado local com os grupos de produtos
+  const [groups, setGroups] = useState<Array<{ id_group: string; nm_group: string }>>([]); // Estado local com os grupos de produtos
+  // Bloquear multiplas chamadas do scanner
+  const isScanningRef = useRef(false);
 
   // Carrega os grupos locais ao iniciar a tela
   useEffect(() => {                                                           // Executa efeito ao carregar o componente
@@ -65,7 +67,7 @@ export function useScannerQuickViewModel() {
     setState(prev => ({ ...prev, loading: true }));                                     // Ativa indicador de carregamento
     try {                                                                               // Inicia bloco de tratamento de erros
       // Converter o tipo do campo
-      const groupIdNumber = state.selectedGroupId ? Number(state.selectedGroupId) : 0;  // Converte o ID do grupo selecionado para número
+      const groupIdNumber = state.selectedGroupId ? state.selectedGroupId : "0";  // Converte o ID do grupo selecionado para número
 
       console.log('[SaveProduct] 🚀 Tentando cadastrar produto:', {                    // Log de auditoria dos dados enviados
         nm_product: state.scannedProduct.nm_product,                                   // Nome do produto
@@ -106,18 +108,17 @@ export function useScannerQuickViewModel() {
   }, [state.scannedProduct, state.selectedGroupId, handleCloseModal, handleClose]);     // Re-cria a função se as dependências mudarem
 
   // Prepara o modal de confirmação com os dados retornados da API
-  const confirmProductRegistration = useCallback((productData: ProductResult) => {        // Prepara os dados para confirmação
+  const confirmProductRegistration = useCallback((productData: ProductResult) => {                              // Prepara os dados para confirmação
     // Tenta casar o ID do grupo vindo da API com um grupo local existente
-    const matchingGroup = groups.find(g => g.id_group === Number(productData.id_group));  // Procura grupo correspondente no banco
-    const initialGroupId = matchingGroup ? String(matchingGroup.id_group) : '';           // Seleciona o ID encontrado ou texto vazio
+    const matchingGroup = groups.find(g => g.id_group === productData.id_group);                        // Procura grupo correspondente no banco
+    const initialGroupId = matchingGroup ? String(matchingGroup.id_group) : String(productData.id_group || ''); // Seleciona o ID encontrado ou texto vazio
 
     setState(prev => ({                  // Atualiza o estado da tela
       ...prev,                          // Preserva o estado anterior
       isConfirmModalOpen: true,         // Abre o modal de confirmação
-      scannedProduct: {
-        ...productData,               // Define os dados do produto lido
-      selectedGroupId: initialGroupId,  // Define o ID do grupo pré-selecionado
-    }}));                                // Finaliza atualização do estado
+      scannedProduct: productData,      // Define os dados do produto lido
+      selectedGroupId: initialGroupId,  // Define os dados do grupo produto lido
+    }));                                // Finaliza atualização do estado
   }, [groups]);                         // Re-cria a função se a lista de grupos mudar
 
   /**
@@ -151,9 +152,9 @@ export function useScannerQuickViewModel() {
           return null;                                                                                // Retorna nulo
         }
       // API COSMOS
-      // Verifica se a API do Cosmos está cadastrada e ativa (st_config === 1 e id_tp_config === 3)
+      // Verifica se a API do Cosmos está cadastrada e ativa (st_config === 1 e id_tp_config === 4)
       const cosmosConfig = configs.find(                                                                                    // Procura pela configuração do Cosmos
-        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('COSMOS') || cfg.id_tp_config === 3) && cfg.st_config === 1 // Filtra por tipo e status ativo
+        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('API Cosmos') || cfg.id_tp_config === "4") && cfg.st_config === 1 // Filtra por tipo e status ativo
       );                                                                                                                    // Guarda a configuração encontrada
 
       // 3. Tenta buscar via Cosmos API se estiver ativa
@@ -170,12 +171,12 @@ export function useScannerQuickViewModel() {
         } 
       }
       // API GEMINI
-      // Verifica se a API do Gemini está cadastrada e ativa (st_config === 1 e id_tp_config === 4)
+      // Verifica se a API do Gemini está cadastrada e ativa (st_config === 1 e id_tp_config === 5
       const geminiConfig = configs.find(                                                                                    // Procura pela configuração do Gemini
-        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('GEMINI') || cfg.id_tp_config === 4) && cfg.st_config === 1 // Filtra por tipo e status ativo
+        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('API Gemini') || cfg.id_tp_config === "5") && cfg.st_config === 1 // Filtra por tipo e status ativo
       );                                                                                                                    // Guarda a configuração encontrada
 
-      // 4. Fallback: Tenta buscar via Gemini API caso o Cosmos falhe ou esteja inativo
+      // Buscar via Gemini API
       if (geminiConfig) {                                                               // Se houver configuração ativa do Gemini
         console.log('[ScannerQuick] 🔍 Tentando buscar produto via API do Gemini...');  // Registra log no console
         const geminiResult = await fetchProductInfoByGTIN(gtin);                        // Executa busca na API do Gemini
@@ -184,18 +185,18 @@ export function useScannerQuickViewModel() {
         }
       }
 
-      // SCRAPING
-      // Verifica se a consulta via Scraping está cadastrada e ativa (st_config === 1 e id_tp_config === 5)
-      const scrapingConfig = configs.find(                                                                                    // Procura pela configuração do Scraping
-        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('SCRAPING') || cfg.id_tp_config === 5) && cfg.st_config === 1 // Filtra por tipo e status ativo
-      );                                                                                                                      // Guarda a configuração encontrada
+      // API OpenFood
+      // Verifica se a consulta via OpenFood está cadastrada e ativa (st_config === 1 e id_tp_config === 6)
+      const openFoodConfig = configs.find(                                                                                        // Procura pela configuração do Scraping
+        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('API OpenFood') || cfg.id_tp_config === "6") && cfg.st_config === 1 // Filtra por tipo e status ativo
+      );                                                                                                                          // Guarda a configuração encontrada
 
-      // 5. Fallback: Tenta buscar via Web Scraping caso Cosmos e Gemini falhem ou estejam inativos
-      if (scrapingConfig) {                                                              // Se houver configuração ativa de Scraping
-        console.log('[ScannerQuick] 🔍 Tentando buscar produto via Scraping...');        // Registra log no console
-        const scrapingResult = await fetchProductScraping(gtin);                       // Executa busca via Scraping
-        if (scrapingResult) {                                                            // Se encontrar produto via Scraping
-          return scrapingResult;                                                         // Retorna o produto encontrado
+      //Buscar via OpenFood API
+      if (openFoodConfig) {                                                            // Se houver configuração ativa de Scraping
+        console.log('[ScannerQuick] 🔍 Tentando buscar produto via API OpenFood...');  // Registra log no console
+        const scrapingResult = await fetchProductOpenFood(gtin);                       // Executa busca via Scraping
+        if (scrapingResult) {                                                          // Se encontrar produto via Scraping
+          return scrapingResult;                                                       // Retorna o produto encontrado
         }
       }
 
@@ -209,7 +210,8 @@ export function useScannerQuickViewModel() {
   // Processa o código de barras lido pela câmera
   const handleScanSuccess = useCallback(async (barcode: string) => {  // Executa após leitura do código de barras
     const cleanBarcode = barcode.trim();                              // Remove espaços do código de barras
-    if (!cleanBarcode) return;                                        // Cancela se o código estiver vazio
+    if (!cleanBarcode || isScanningRef.current) return;               // Cancela se o código estiver vazio
+    isScanningRef.current = true;                                     // Trava concorrência
     setState(prev => ({ ...prev, loading: true }));                   // Ativa indicador de carregamento
 
     try {                                                             // Inicia bloco de tratamento de erro
@@ -238,6 +240,7 @@ export function useScannerQuickViewModel() {
       console.error('[ScannerQuick] Erro no processamento da leitura:', error); // Exibe mensagem de erro no console
     } finally {                                                                 // Executa sempre ao término
       setState(prev => ({ ...prev, loading: false }));                          // Desativa indicador de carregamento
+      isScanningRef.current = false;                                            // Libera trava
     }
   }, [confirmProductRegistration, handleClose]);                                // Re-cria a função se as dependências mudarem
 

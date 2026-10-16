@@ -2,28 +2,31 @@
 
 // 1. Entidade base que reflete a tabela 'list_buy' no SQLite
 export interface BuyEntity {
-  id_product: number;         // ID produto (INTEGER)
+  id_product: string;         // ID produto (INTEGER)
   qt_product: number;         // Quantidade de produto
   vl_product?: number | null; // Valor do produto
   dt_list_buy: string;        // Data em formato ISO (TEXT)
+  at_updated?: string | null; // Sincronização Data/Hora última atualização
+  at_delete?: string | null;  // Sincronização Data/Hora da exclusão lógica (Soft Delete)
+  st_sync?: number;           // Sincronização Status (0: synced, 1: pending, 2: pending delete)
 }
 
 export interface BuyHistEntity extends BuyEntity {
-  id_hist_buy?: number;       // ID primário autoincrementado (INTEGER)
-  id_supplier: number;        // ID do fornecedor
+  id_hist_buy?: string;       // ID primário autoincrementado (INTEGER)
+  id_supplier: string;        // ID do fornecedor
   vl_product: number;         // Sobrescreve para tornar obrigatório no histórico
   dt_hist_buy: string;        // Data de inserção no histórico
 }
 
 // 2. DTO para criação de novos registros (Omite a data da lista de compra)
 export type CreateBuyDTO = Omit<BuyEntity, 'dt_list_buy'> & {
-  id_list_buy?: number | null;
+  id_list_buy?: string | null;
   dt_list_buy?: string;
 };
 
 export interface CreateBuyHistDTO {
-  id_product: number;
-  id_supplier: number;
+  id_product: string;
+  id_supplier: string;
   qt_product: number;
   vl_product: number;
   dt_list_buy: string;
@@ -41,17 +44,17 @@ export interface BuyWithProductEntity extends BuyEntity {
 
 // 5. DTOs de Payload unificados para arquitetura MVI
 export interface CreateBuyItemPayload {
-  id_product: number;
+  id_product: string;
   qt_product: number;
   vl_product: number;
 }
 
 export interface UpdateBuyPayload {
-  id_product: number;
+  id_product: string;
   qt_product: number;
   vl_product: number;
 }
 
 export interface DeleteBuyItemPayload {
-  id_product: number;
+  id_product: string;
 }

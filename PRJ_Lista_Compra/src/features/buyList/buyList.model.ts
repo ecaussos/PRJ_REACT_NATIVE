@@ -10,10 +10,10 @@ export interface IBuyListModel {
   fetchByName(name: string): Promise<ProductSearchResult[]>;      // Busca produtos cadastrados filtrando pelo nome
   fetchByBarcode(barcode: string): Promise<ProductSearchResult>;  // Busca produto cadastrado pelo código de barras
   searchProducts(query: string): Promise<ProductSearchResult[]>;  // Pesquisa genérica de produtos por termo
-  create(id_product: number, qt_product: number): Promise<void>;  // Adiciona um produto à lista informando ID e quantidade
+  create(id_product: string, qt_product: number): Promise<void>;  // Adiciona um produto à lista informando ID e quantidade
   createByBarcode(barcode: string): Promise<ProductSearchResult>; // Adiciona um produto diretamente pelo código de barras
-  update(id_list_buy: number, qt_product: number): Promise<void>; // Atualiza a quantidade de um item na lista
-  delete(id_list_buy: number): Promise<void>;                     // Remove um item específico da lista de compras
+  update(id_list_buy: string, qt_product: number): Promise<void>; // Atualiza a quantidade de um item na lista
+  delete(id_list_buy: string): Promise<void>;                     // Remove um item específico da lista de compras
   clear(): Promise<void>;                                         // Remove todos os itens da lista de compras
 }
 
@@ -83,9 +83,9 @@ export class BuyListModel implements IBuyListModel {
   }
 
   // Função para criar registro e valida antes de salvar no repositório
-  async create(id_product: number, qt_product: number = 1): Promise<void> {
+  async create(id_product: string, qt_product: number = 1): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID
-    if (!id_product || id_product <= 0) {
+    if (!id_product || id_product.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um produto válido.');
     }
@@ -114,9 +114,9 @@ export class BuyListModel implements IBuyListModel {
   }
 
   // Atualiza a quantidade de um item existente na lista
-  async update(id_list_buy: number, qt_product: number): Promise<void> {
+  async update(id_list_buy: string, qt_product: number): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID
-    if (!id_list_buy || id_list_buy <= 0) {
+    if (!id_list_buy || id_list_buy.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Selecione um registro válido.');
     }
@@ -130,9 +130,9 @@ export class BuyListModel implements IBuyListModel {
   }
 
   // Remove um item da lista pelo seu ID
-  async delete(id_list_buy: number): Promise<void> {
+  async delete(id_list_buy: string): Promise<void> {
     // Valida se não existe dado preenchido e for menor que zero - ID    
-    if (!id_list_buy || id_list_buy <= 0) {
+    if (!id_list_buy || id_list_buy.length <= 0) {
       // Verdadeiro: Gerar mensagem informativa
       throw new Error('Registro inválido para exclusão.');
     }
@@ -169,12 +169,11 @@ export class BuyListModel implements IBuyListModel {
   
   // Regra de negócio: Constrói a intenção (Intent) para Salvar/Editar - Fábrica de ações (Action Factory)
   static buildSaveAction(
-    id_product: number | string,  // ID do produto ou do item da lista
+    id_product: string,  // ID do produto ou do item da lista
     quantity: number | string,    // Valor do campo de texto com a quantidade informada
     isEditing: boolean,           // Indica se o modal é de edição (true) ou novo cadastro (false)
-    editingId: number | null      // Indica se há ou não um valor (ID)
+    editingId: string             // Indica se há ou não um valor (ID)
   ): BuyListIntent {
-    const parsedId = Number(id_product);      // Converte o ID para número
     const parsedQuantity = Number(quantity);  // Converte a quantidade para número
     // Verificar se o valor é true e diferente de null - SE Edição=True OU SE houver um ID 
     if (isEditing && editingId !== null) {
@@ -182,7 +181,8 @@ export class BuyListModel implements IBuyListModel {
       return {
         type: 'UPDATE' as const,      // Define o type utilizado no hook
         payload: {                    // Dados necessários para atualizar o registro
-          id_list_buy: editingId,      // Atribui o id da lista de compra
+          id_product: id_product,     // Atribui o id do produto    
+          id_list_buy: editingId,     // Atribui o id da lista de compra
           qt_product: parsedQuantity, // Atribui a quantidade convertida
         },
       };
@@ -191,7 +191,7 @@ export class BuyListModel implements IBuyListModel {
     return {
       type: 'CREATE' as const,      // Define o type utilizado no hook
       payload: {                    // Dados necessários para atualizar o registro
-        id_product: parsedId,       // Atribui o id do produto convertido    
+        id_product: id_product,     // Atribui o id do produto    
         qt_product: parsedQuantity, // Atribui a quantidade convertida
       },
     };

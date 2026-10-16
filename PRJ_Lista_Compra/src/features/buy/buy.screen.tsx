@@ -48,7 +48,7 @@ export default function BuyScreen(){
   /* -------- FUNÇÕES QUE DEPENDEM DE AÇÕES -------- */
 
   // Função para realizar a edição do registro
-  const handleOpenEdit = (idProduct: number, quantity: number, price: number) => {
+  const handleOpenEdit = (idProduct: string, quantity: number, price: number) => {
     form.startEditing(idProduct, quantity, price); // Preenche o formulário com os dados do registro selecionado
   };
 

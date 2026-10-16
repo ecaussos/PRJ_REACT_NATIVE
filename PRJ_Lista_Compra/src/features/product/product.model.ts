@@ -12,9 +12,9 @@ export interface IProductModel {
   checkBarcode(gtin: string): Promise<ProductEntity | null>;                                                          // Assinatura alias para código de barras
   findByName(query: string): Promise<ProductSearchResult[]>;                                                          // Assinatura para busca parcial por nome
   fetchGroupOptions(): Promise<GroupOption[]>;                                                                        // Assinatura para listar grupos
-  create(nm_product: string, cd_product_gtin: string, id_group: number): Promise<ProductEntity>;                      // Assinatura para criação
-  update(id_product: number, data: { nm_product: string; cd_product_gtin: string; id_group: number }): Promise<void>; // Assinatura para atualização
-  delete(id_product: number): Promise<void>;                                                                          // Assinatura para remoção
+  create(nm_product: string, cd_product_gtin: string, id_group: string): Promise<ProductEntity>;                      // Assinatura para criação
+  update(id_product: string, data: { nm_product: string; cd_product_gtin: string; id_group: string }): Promise<void>; // Assinatura para atualização
+  delete(id_product: string): Promise<void>;                                                                          // Assinatura para remoção
 }
 
 export class ProductModel implements IProductModel {
@@ -57,7 +57,7 @@ export class ProductModel implements IProductModel {
   }
 
   // Função para criar registro e valida antes de salvar no repositório
-  async create(nm_product: string, cd_product_gtin: string, id_group: number): Promise<ProductEntity> {  
+  async create(nm_product: string, cd_product_gtin: string, id_group: string): Promise<ProductEntity> {  
     // Remove os espaços extras do início e fim da string
     const cleanName = nm_product.trim();                      // Limpa string do nome
     const cleanGtin = cd_product_gtin.trim();                  // Limpa string do código de barras
@@ -101,7 +101,7 @@ export class ProductModel implements IProductModel {
   }
 
   // Função para atualizar e validar antes de salvar no repositório
-  async update(id_product: number, data: { nm_product: string; cd_product_gtin: string; id_group: number }): Promise<void> {
+  async update(id_product: string, data: { nm_product: string; cd_product_gtin: string; id_group: string }): Promise<void> {
     // Remove os espaços extras do início e fim da string
     const cleanName = data.nm_product.trim();                 // Limpa string do nome
     const cleanGtin = data.cd_product_gtin.trim();            // Limpa string do código de barras
@@ -145,7 +145,7 @@ export class ProductModel implements IProductModel {
   }
 
   // Função para deletar o registro utilizando o ID
-  async delete(id_product: number): Promise<void> {
+  async delete(id_product: string): Promise<void> {
     // Executa a exclusão do registro no repositório
     await this.repository.delete(id_product);
   }
@@ -163,15 +163,13 @@ export class ProductModel implements IProductModel {
   static buildSaveAction(
     name: string,             // Valor do campo de texto com o nome do registro
     barcode: string,          // Valor do campo de texto com o código de barra do registro
-    groupId: string | number, // Valor do campo de texto/número com o grupo do registro
+    groupId: string, // Valor do campo de texto/número com o grupo do registro
     isEditing: boolean,       // Indica se o modal é de edição (true) ou novo cadastro (false)
-    editingId: number | null  // Indica se há ou não um valor (ID)
+    editingId: string | null  // Indica se há ou não um valor (ID)
   ): ProductIntent {
     // Remove os espaços extras do início e fim da string
     const cleanName = name.trim();                             // Limpa espaços do nome
     const cleanBarcode = barcode.trim();                       // Limpa espaços do código de barras
-    // Converte o tipo da variável para número
-    const convetGroupId = Number(groupId);                     // Converte a propriedade grupo
     // Verificar se o valor é true e diferente de null - SE Edição=True OU SE houver um ID 
     if (isEditing && editingId !== null) {
       // Verdadeiro: Identifica que é uma edição
@@ -181,7 +179,7 @@ export class ProductModel implements IProductModel {
           id_product: editingId,         // Atribui o id recebido
           nm_product: cleanName,         // Atribui o nome recebido
           cd_product_gtin: cleanBarcode, // Atribui código de barra recebido
-          id_group: convetGroupId,       // Atribui o grupo recebido
+          id_group: groupId,       // Atribui o grupo recebido
         },
       };
     }
@@ -191,7 +189,7 @@ export class ProductModel implements IProductModel {
       payload: {                       // Dados necessários para criar o registro
         nm_product: cleanName,         // Atribui o nome recebido
         cd_product_gtin: cleanBarcode, // Atribui código de barra recebido
-        id_group: convetGroupId,       // Atribui o grupo recebido
+        id_group: groupId,       // Atribui o grupo recebido
       },
     };
   }

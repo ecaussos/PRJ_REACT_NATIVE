@@ -16,7 +16,7 @@ export interface IProductRepository {
   findAll(): Promise<ProductWithGroupEntity[]>;
 
   /** Busca um produto específico pelo seu ID */
-  findById(id_product: number): Promise<ProductEntity | null>;
+  findById(id_product: string): Promise<ProductEntity | null>;
 
   /** Busca um produto pelo seu código GTIN/código de barras */
   findByBarcode(gtin: string): Promise<ProductEntity | null>;
@@ -34,8 +34,8 @@ export interface IProductRepository {
   create(product: CreateProductDTO): Promise<ProductEntity>;
 
   /** Atualiza um produto existente pelo ID */
-  update(id_product: number, product: UpdateProductDTO): Promise<void>;
+  update(id_product: string, product: UpdateProductDTO): Promise<void>;
 
   /** Remove um produto pelo ID */
-  delete(id_product: number): Promise<void>;
+  delete(id_product: string): Promise<void>;
 }

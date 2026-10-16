@@ -18,7 +18,7 @@ export function useProductViewModel(model: ProductModel = ProductModelInstance) 
   const [barcode, setBarcode] = useState('');                                     // Armazena o valor digitado no campo de código de barras
   const [groupId, setGroupId] = useState('');                                     // Armazena o valor digitado no campo de grupo
   const [searchText, setSearchText] = useState('');                               // Armazena o termo para filtragem na listagem
-  const [editingId, setEditingId] = useState<number | null>(null);                // Armazena o ID do registro em edição (null indica novo cadastro)
+  const [editingId, setEditingId] = useState<string | null>(null);                // Armazena o ID do registro em edição (null indica novo cadastro)
 
   // Reseta os campos do formulário para o estado inicial
   const resetForm = useCallback(() => {
@@ -114,7 +114,7 @@ export function useProductViewModel(model: ProductModel = ProductModelInstance) 
   };
 
   // Função para apresentar o modal de confirmação de exclusão
-  const handleDeleteData = (id: number, name: string) => {                        // Recebe ID e nome do item para exibição na mensagem
+  const handleDeleteData = (id: string, name: string) => {                        // Recebe ID e nome do item para exibição na mensagem
     Alert.alert(                                                                  // Exibe alerta de confirmação nativo
       'Excluir',                                                                  // Título da caixa de diálogo
       `Deseja realmente excluir o registro "${name}"?`,                           // Mensagem de confirmação com o nome do item
@@ -149,7 +149,7 @@ export function useProductViewModel(model: ProductModel = ProductModelInstance) 
 
   // Função para preencher os campos e ativar o modo de edição
   const startEditing = (
-    id: number,                                                                   // ID do registro selecionado
+    id: string,                                                                   // ID do registro selecionado
     name: string,                                                                 // Nome do produto selecionado
     barcode: string,                                                              // Código de barras selecionado
     groupId: string                                                               // ID do grupo selecionado

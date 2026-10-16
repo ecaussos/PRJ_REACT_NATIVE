@@ -33,8 +33,8 @@ export default function ConfigScreen() {
 
   // Função para realizar a edição do registro
   const handleOpenEdit = (
-    id: number,                 // ID único do registro a ser editado
-    tpConfig: number,           // Tipo da configuração (ex: protocolo ou serviço)
+    id: string,                 // ID único do registro a ser editado
+    tpConfig: string,           // Tipo da configuração (ex: protocolo ou serviço)
     urlConfig: string,          // URL ou endereço do servidor/host
     portConfig: number | null,  // Porta de conexão (pode ser nula se padrão)
     userConfig: string | null,  // Usuário de autenticação (pode ser nulo)

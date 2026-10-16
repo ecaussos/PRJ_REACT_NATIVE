@@ -12,8 +12,12 @@ export function ScannerQuickScreen() {                                          
     <View style={{ flex: 1 }}>
       {/* 1. Modal da Câmera / Leitor */}
       <BuyListCameraModal                                                               // Modal com a interface de leitura de código de barras
-        showModal={state.visible}                                                       // Controla a visibilidade da câmera/leitor
-        onScanSuccess={barcode => dispatch({ type: 'SCAN_BARCODE', payload: barcode })} // Despacha a intenção de leitura ao detectar o código
+        showModal={state.visible && !state.isConfirmModalOpen}                          // Controla a visibilidade da câmera/leitor
+        onScanSuccess={barcode =>{
+          if (!state.loading) { 
+            dispatch({ type: 'SCAN_BARCODE', payload: barcode })}                       // Despacha a intenção de leitura ao detectar o código
+          }
+        }
         onClose={() => dispatch({ type: 'CLOSE' })}                                     // Despacha a intenção de fechar a tela do leitor
       />
       {/* 2. Formulário de Confirmação e Edição Rápida */}

@@ -14,7 +14,7 @@ export interface IConfigModel {
   findByUrlExact(url: string): Promise<ConfigEntity | null>;  // Busca um registro por URL/Host exato
   fetchConfigTypeOptions(): Promise<ConfigTypeOption[]>;      // Busca as opções de tipos de configuração                                                                                                                                              // Assinatura para listar tipos de configuração
   create(
-      id_tp_config: number,          // ID do tipo de configuração
+      id_tp_config: string,          // ID do tipo de configuração
       url_config?: string | null,    // URL ou host do serviço (opcional)
       port_config?: number | null,   // Porta de conexão (opcional)
       user_config?: string | null,   // Usuário para autenticação (opcional)
@@ -23,9 +23,9 @@ export interface IConfigModel {
       st_ssl?: number,               // Indicador de uso de SSL (1 ativo, 0 inativo)
       st_config?: number             // Status da configuração (1 ativo, 0 inativo)
     ): Promise<ConfigEntity>;        // Cria um novo registro e retorna a entidade criada
-  update(id_config: number,          // ID da configuração a ser atualizada
+  update(id_config: string,          // ID da configuração a ser atualizada
         data: {
-          id_tp_config: number;        // Novo tipo de configuração
+          id_tp_config: string;        // Novo tipo de configuração
           url_config?: string | null;  // Nova URL ou host (opcional)
           port_config?: number | null; // Nova porta (opcional) 
           user_config?: string | null; // Novo usuário (opcional)
@@ -35,7 +35,7 @@ export interface IConfigModel {
           st_config: number            // Novo status da configuração
         }
       ): Promise<void>;                // Atualiza os dados do registro informado
-  delete(id_config: number): Promise<void>;                   // Remove o registro pelo ID                                                                                                                                                             // Assinatura para remoção
+  delete(id_config: string): Promise<void>;                   // Remove o registro pelo ID                                                                                                                                                             // Assinatura para remoção
 
   // Assinaturas para manipulação do arquivo JSON local (FileSystem)
   checkConfigFileExists(): Promise<boolean>;                   // Verifica se o arquivo físico existe no dispositivo
@@ -67,7 +67,7 @@ export class ConfigModel implements IConfigModel {
 
   // Função para criar registro e validar antes de salvar no repositório
   async create(
-    id_tp_config: number,               // ID do tipo de configuração a ser criada
+    id_tp_config: string,               // ID do tipo de configuração a ser criada
     url_config: string | null = null,   // URL ou host do serviço (opcional, padrão: null)
     port_config: number | null = null,  // Porta de conexão (opcional, padrão: null)
     user_config: string | null = null,  // Usuário de autenticação (opcional, padrão: null)
@@ -93,7 +93,7 @@ export class ConfigModel implements IConfigModel {
     }
     // Executa a persistência do registro no repositório
     return await this.repository.create({
-      id_tp_config: Number(id_tp_config),                   // ID do tipo de configuração
+      id_tp_config: id_tp_config,                   // ID do tipo de configuração
       url_config: cleanUrl,                                 // URL/host limpo e sanitizado
       port_config: port_config ?? null,                     // Porta de conexão
       user_config: cleanUser,                               // Usuário sem espaços extras (ou null)
@@ -106,9 +106,9 @@ export class ConfigModel implements IConfigModel {
 
   // Função para atualizar e validar antes de salvar no repositório
   async update(
-    id_config: number,              // ID da configuração que será atualizada
+    id_config: string,              // ID da configuração que será atualizada
     data: {
-      id_tp_config: number;         // Novo tipo de configuração
+      id_tp_config: string;         // Novo tipo de configuração
       url_config?: string | null;   // Nova URL/host (opcional/pode ser nulo)
       port_config?: number | null;  // Nova porta de conexão (opcional/pode ser nulo)
       user_config?: string | null;  // Novo usuário de autenticação (opcional/pode ser nulo)
@@ -153,7 +153,7 @@ export class ConfigModel implements IConfigModel {
   }
 
   // Função para deletar o registro utilizando o ID
-  async delete(id_config: number): Promise<void> {
+  async delete(id_config: string): Promise<void> {
     // Executa a exclusão do registro no repositório
     await this.repository.delete(id_config);
   }
@@ -255,6 +255,8 @@ export class ConfigModel implements IConfigModel {
    * 2 = BD Cloud (Todos os campos)
    * 3 = API Cosmos (URL/Host e Chave de Acesso)
    * 4 = API Gemini (Chave de Acesso) 
+   * 5 = API OpenFood (URL/Host) 
+   * 6 = API EanSearch (URL/Host) 
   */
 
   static validate(data: {
@@ -275,10 +277,10 @@ export class ConfigModel implements IConfigModel {
     const cleanVers = data.versConfig ? data.versConfig.trim() : null;  // Versão
     // Identificar dos tipos de configuração
     const isBdCloud = tp === 2;   // Banco de Dados Cloud (ID 2)
-    const isApiCosmos = tp === 3; // API Cosmos (ID 3)
-    const isApiGemini = tp === 4; // API Gemini (ID 4)
-    const isApiOpenFood = tp === 5;  // API OpenFood (ID 5)
-    // 1. URL/Host (BD Cloud, API Cosmos E API OpenFood)
+    const isApiCosmos = tp === 4; // API Cosmos (ID 4)
+    const isApiGemini = tp === 5; // API Gemini (ID 5)
+    const isApiOpenFood = tp === 6;  // API OpenFood (ID 6)
+      // 1. URL/Host (BD Cloud, API Cosmos E API OpenFood)
     // Valida se o tipo selecionado é 2 ou 3 e se a URL está vazia.
     if ((isBdCloud || isApiCosmos || isApiOpenFood) && !cleanUrl) {
       // Verdadeiro: Gerar mensagem informativa     
@@ -319,9 +321,9 @@ export class ConfigModel implements IConfigModel {
     const cleanVers = versConfig ? versConfig.trim() : ''; // Versão
     // Identificar dos tipos de configuração
     const isBdCloud = tp === 2;   // Banco de Dados Cloud (ID 2)
-    const isApiCosmos = tp === 3; // API Cosmos (ID 3)
-    const isApiGemini = tp === 4; // API Gemini (ID 4)
-    const isApiOpenFood = tp === 5; // API OpenFood (ID 5)
+    const isApiCosmos = tp === 4; // API Cosmos (ID 4)
+    const isApiGemini = tp === 5; // API Gemini (ID 5)
+    const isApiOpenFood = tp === 6; // API OpenFood (ID 6)
     // 1. URL/Host (BD Cloud e API Cosmos)
     // Valida se o tipo selecionado é 2 ou 3 e se a URL possui tamanho 0.
     if ((isBdCloud || isApiCosmos || isApiOpenFood) && cleanUrl.length === 0) {
@@ -346,7 +348,7 @@ export class ConfigModel implements IConfigModel {
 
   // Regra de negócio: Constrói a intenção (Intent) para Salvar/Editar - Fábrica de ações (Action Factory)
   static buildSaveAction(
-    tpConfig: string | number,  // Valor do campo de tipo de configuração
+    tpConfig: string,            // Valor do campo de tipo de configuração
     urlConfig: string,          // Valor do campo URL/Host
     portConfig: string,         // Valor do campo Porta
     userConfig: string,         // Valor do campo Usuário
@@ -355,9 +357,9 @@ export class ConfigModel implements IConfigModel {
     stSsl: number,              // Status do SSL (1/0)
     stConfig: number,           // Status da Configuração (1/0)
     isEditing: boolean,         // Indica se é edição (true) ou novo (false)
-    editingId: number | null    // ID do item em edição
+    editingId: string | null    // ID do item em edição
   ): ConfigIntent {
-    const convertTpConfig = Number(tpConfig);                                             // Converte o tipo de configuração para valor numérico
+    const cleanTpConfig = tpConfig && tpConfig.trim();                                    // remove espaços em branco das pontas;
     const cleanUrl = urlConfig && urlConfig.trim() !== '' ? urlConfig.trim() : null;      // URL remove espaços em branco das pontas
     const parsePort = portConfig && portConfig.trim() !== '' ? Number(portConfig) : null; // Porta remove espaços e valida se vazio ou null coverte numérico
     const cleanUser = userConfig && userConfig.trim() !== '' ? userConfig.trim() : null;  // Usuário remove espaços e valida se vazio ou null
@@ -370,7 +372,7 @@ export class ConfigModel implements IConfigModel {
         type: 'UPDATE' as const,            // Define a ação como atualização (tipo literal)
         payload: {
           id_config: editingId,             // ID do registro sendo alterado
-          id_tp_config: convertTpConfig,    // Tipo de configuração 
+          id_tp_config: cleanTpConfig,      // Tipo de configuração 
           url_config: cleanUrl,             // URL
           port_config: parsePort,           // Porta
           user_config: cleanUser,           // Usuário
@@ -386,7 +388,7 @@ export class ConfigModel implements IConfigModel {
     return {
       type: 'CREATE' as const,          // Define a ação como criação (tipo literal)
       payload: {
-        id_tp_config: convertTpConfig,    // Tipo de configuração 
+        id_tp_config: cleanTpConfig,    // Tipo de configuração 
         url_config: cleanUrl,             // URL
         port_config: parsePort,           // Porta
         user_config: cleanUser,           // Usuário

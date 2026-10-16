@@ -8,7 +8,7 @@ interface ScannerQuickFormProps {                         // Interface de propri
   visible: boolean;                                       // Controla a visibilidade do modal de confirmação
   scannedProduct: ProductResult | null;                   // Dados do produto obtidos da leitura
   selectedGroupId: string;                                // ID do grupo atualmente selecionado
-  groups: Array<{ id_group: number; nm_group: string }>;  // Lista de grupos disponíveis para seleção
+  groups: Array<{ id_group: string; nm_group: string }>;  // Lista de grupos disponíveis para seleção
   loading?: boolean;                                      // Indicador visual de estado de carregamento
   onSave: () => void;                                     // Função callback executada ao salvar o produto
   dispatch: (intent: ScannerQuickIntent) => void;         // Função para despachar intenções do usuário

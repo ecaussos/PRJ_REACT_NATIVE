@@ -2,7 +2,7 @@
 
 export interface ProductResult {
   nm_product: string;       // Nome do produto
-  id_group?: number | null; // ID do grupo/categoria vinculado
+  id_group?: string; // ID do grupo/categoria vinculado
   gtin: string;             // Código de barras (GTIN/EAN)
   tag?: string | null;      // Categoria/Tag retornada pela API
 }

@@ -1,9 +1,12 @@
 // app/index.tsx
 import { Link } from 'expo-router';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { syncAuto } from '../core/sync/syncAuto';
 import { styles } from './index.style';
 
 export default function Home() {
+  // Sincronização BD Local e BD Cloud
+  syncAuto();
   // MONTAGEM DA TELA 
   return (
     <View style={styles.container}>

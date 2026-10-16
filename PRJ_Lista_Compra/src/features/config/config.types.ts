@@ -6,7 +6,7 @@ export type Config = ConfigEntity; // Alias para a entidade principal de configu
 
 // DTO para as opções da lista de tipos de configuração (Dropdown/Select)
 export interface ConfigTypeOption {
-  id_tp_config: number; // Identificador único do tipo de configuração
+  id_tp_config: string; // Identificador único do tipo de configuração
   ds_tp_config: string; // Descrição/Nome do tipo de configuração
 }
 
@@ -40,19 +40,19 @@ export interface ConfigItemProps {
 
 // Dados necessários para criar uma nova configuração
 export interface CreatePayload {
-  id_tp_config: number;       // ID do tipo de configuração selecionado
-  url_config: string | null;  // URL/Host configurado
-  port_config: number | null; // Porta de conexão
-  user_config: string | null; // Usuário de autenticação
-  key_config: string | null;  // Chave/Token de acesso
-  vers_config: string | null; // Versão
-  st_ssl: number;             // Indicador de uso de SSL (1 para sim, 0 para não)
-  st_config: number;          // Status da configuração (1 para ativo, 0 para inativo)
+  id_tp_config: string;         // ID do tipo de configuração selecionado
+  url_config: string | null;    // URL/Host configurado
+  port_config: number | null;   // Porta de conexão
+  user_config: string | null;   // Usuário de autenticação
+  key_config: string | null;    // Chave/Token de acesso
+  vers_config: string | null;   // Versão
+  st_ssl: number;               // Indicador de uso de SSL (1 para sim, 0 para não)
+  st_config: number;            // Status da configuração (1 para ativo, 0 para inativo)
 }
 
 // Dados necessários para atualizar uma configuração existente
 export interface UpdatePayload extends CreatePayload {
-  id_config: number; // ID do registro que será atualizado
+  id_config: string; // ID do registro que será atualizado
 }
 
 // -------- Estados da Aplicação e MVI (ViewModel / Hook) -------- //
@@ -71,4 +71,4 @@ export type ConfigIntent =
   | { type: 'LOAD' }                                   // Ação para carregar os dados
   | { type: 'CREATE'; payload: CreatePayload }         // Ação para criar novo registro
   | { type: 'UPDATE'; payload: UpdatePayload }         // Ação para atualizar registro existente
-  | { type: 'DELETE'; payload: number };               // Ação para deletar registro pelo ID
+  | { type: 'DELETE'; payload: string };               // Ação para deletar registro pelo ID
