@@ -3,13 +3,11 @@ import { router } from 'expo-router'; // Importa o roteador para navegação de 
 import { useCallback, useEffect, useRef, useState } from 'react'; // Importa os hooks do React
 import { Alert } from 'react-native'; // Importa o componente de alerta nativo
 
-import { CosmoProductResult, fetchProductFromCosmos } from '../../core/api/cosmosProduct.api'; // Importa a API de busca no Cosmos
-import { fetchProductInfoByGTIN } from '../../core/api/geminiProduct.api'; // Importa a API de busca no Gemini
-import { fetchProductOpenFood } from '../../core/api/openFoodProduct.api'; // Importa a API de busca via OpenFood
+// Importação das funções de API e tipos centralizados
+import { fetchProductByGTIN } from '../../core/api/api.service';
 
 // Instâncias de Models
 import { BuyListModelInstance } from '../buyList/buyList.model'; // Importa a instância do model da lista de compras
-import { ConfigModelInstance } from '../config/config.model'; // Importa a instância do model de configuração local
 import { groupProductModelInstance } from '../groupProduct/groupProduct.model'; // Importa a instância do model de grupos
 import { ProductModelInstance } from '../product/product.model'; // Importa a instância do model de produtos
 import { ProductResult, ScannerQuickIntent, ScannerQuickState } from './scannerQuick.types'; // Importa os tipos da funcionalidade
@@ -121,92 +119,6 @@ export function useScannerQuickViewModel() {
     }));                                // Finaliza atualização do estado
   }, [groups]);                         // Re-cria a função se a lista de grupos mudar
 
-  /**
-   * Consulta as APIs externas com base nas configurações ativas no arquivo config.json local.
-   * Tenta primeiramente o Cosmos, faz fallback para o Gemini e posteriormente Scraping se necessário.
-   */
-  const fetchProductByConfiguredApi = async (gtin: string): Promise<ProductResult | null> => {  // Busca produto nas APIs configuradas
-    try {                                                                                       // Inicia bloco de tratamento de erro
-      // 1. Verifica se o arquivo config.json existe localmente
-      const fileExists = await ConfigModelInstance.checkConfigFileExists();                     // Checa existência do arquivo local de configuração
-      if (!fileExists) {                                                                        // Se o arquivo não existir
-        console.warn('[ScannerQuick] ⚠️ Arquivo config.json não encontrado localmente.');      // Emite alerta no console
-        return null;                                                                            // Retorna nulo
-      }
-
-      // 2. Lê o conteúdo das configurações
-      const configFile = await ConfigModelInstance.readConfigFile();                                // Lê o arquivo de configuração local
-  
-      // LOG DE CONFIGURAÇÕES: Exibe o conteúdo completo do arquivo no console
-      console.log('[ScannerQuick] 📄 Conteúdo bruto de config.json:', JSON.stringify(configFile, null, 2));
-   
-     // Extrai o array de configurações aceitando objeto com chave .configs ou array direto
-      const configs: any[] = Array.isArray(configFile) 
-        ? configFile 
-        : configFile?.configs || configFile?.data || [];
-
-      console.log('[ScannerQuick] 📋 Lista de configurações processada:', configs); // Exibe o array extraído no console
-
-      if (!configs || configs.length === 0) {                                                         // Se não houver configurações ativas
-          console.warn('[ScannerQuick] ⚠️ Nenhuma configuração encontrada no arquivo config.json.');  // Emite alerta no console
-          return null;                                                                                // Retorna nulo
-        }
-      // API COSMOS
-      // Verifica se a API do Cosmos está cadastrada e ativa (st_config === 1 e id_tp_config === 4)
-      const cosmosConfig = configs.find(                                                                                    // Procura pela configuração do Cosmos
-        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('API Cosmos') || cfg.id_tp_config === "4") && cfg.st_config === 1 // Filtra por tipo e status ativo
-      );                                                                                                                    // Guarda a configuração encontrada
-
-      // 3. Tenta buscar via Cosmos API se estiver ativa
-      if (cosmosConfig) {                                                                   // Se houver configuração ativa do Cosmos
-        console.log('[ScannerQuick] 🔍 Tentando buscar produto via API do Cosmos...');      // Registra log no console
-        const cosmosResult: CosmoProductResult | null = await fetchProductFromCosmos(gtin); // Executa busca na API do Cosmos
-        if (cosmosResult) {                                                                 // Se encontrar produto no Cosmos
-          return {                                                                          // Retorna os dados formatados do produto
-            nm_product: cosmosResult.nm_product,                                            // Nome do produto
-            id_group: cosmosResult.id_group,                                                // ID do grupo retornado
-            gtin: cosmosResult.gtin || gtin,                                                // Código GTIN do produto
-            tag: cosmosResult.tag,                                                          // Tag/Categoria do produto
-          }; 
-        } 
-      }
-      // API GEMINI
-      // Verifica se a API do Gemini está cadastrada e ativa (st_config === 1 e id_tp_config === 5
-      const geminiConfig = configs.find(                                                                                    // Procura pela configuração do Gemini
-        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('API Gemini') || cfg.id_tp_config === "5") && cfg.st_config === 1 // Filtra por tipo e status ativo
-      );                                                                                                                    // Guarda a configuração encontrada
-
-      // Buscar via Gemini API
-      if (geminiConfig) {                                                               // Se houver configuração ativa do Gemini
-        console.log('[ScannerQuick] 🔍 Tentando buscar produto via API do Gemini...');  // Registra log no console
-        const geminiResult = await fetchProductInfoByGTIN(gtin);                        // Executa busca na API do Gemini
-        if (geminiResult) {                                                             // Se encontrar produto no Gemini
-          return geminiResult;                                                          // Retorna o produto encontrado
-        }
-      }
-
-      // API OpenFood
-      // Verifica se a consulta via OpenFood está cadastrada e ativa (st_config === 1 e id_tp_config === 6)
-      const openFoodConfig = configs.find(                                                                                        // Procura pela configuração do Scraping
-        (cfg: any) => (cfg.ds_tp_config?.toUpperCase().includes('API OpenFood') || cfg.id_tp_config === "6") && cfg.st_config === 1 // Filtra por tipo e status ativo
-      );                                                                                                                          // Guarda a configuração encontrada
-
-      //Buscar via OpenFood API
-      if (openFoodConfig) {                                                            // Se houver configuração ativa de Scraping
-        console.log('[ScannerQuick] 🔍 Tentando buscar produto via API OpenFood...');  // Registra log no console
-        const scrapingResult = await fetchProductOpenFood(gtin);                       // Executa busca via Scraping
-        if (scrapingResult) {                                                          // Se encontrar produto via Scraping
-          return scrapingResult;                                                       // Retorna o produto encontrado
-        }
-      }
-
-    } catch (error) {                                                                                     // Captura erros no processo de busca
-      console.error('[ScannerQuick] ❌ Erro ao ler configurações do arquivo ou consultar APIs:', error);  // Registra mensagem de erro
-    }
-
-    return null; // Retorna nulo se não encontrar em nenhuma API
-  };
-
   // Processa o código de barras lido pela câmera
   const handleScanSuccess = useCallback(async (barcode: string) => {  // Executa após leitura do código de barras
     const cleanBarcode = barcode.trim();                              // Remove espaços do código de barras
@@ -226,7 +138,7 @@ export function useScannerQuickViewModel() {
         return;                                                                       // Encerra a leitura com sucesso
       }
       // 2. Consulta a API externa ativada nas configurações
-      const apiResult = await fetchProductByConfiguredApi(cleanBarcode);  // Busca o produto nas APIs externas ativas
+      const apiResult = await fetchProductByGTIN(cleanBarcode);  // Busca o produto nas APIs externas ativas
       // Valida se o protudofoi encontrado
       if (apiResult) {                                                    // Se o produto for localizado na API
         confirmProductRegistration(apiResult);                            // Abre modal para confirmar/cadastrar o produto

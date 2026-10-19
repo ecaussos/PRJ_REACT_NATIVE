@@ -1,11 +1,8 @@
 // features/scannerQuick/scannerQuick.types.ts
 
-export interface ProductResult {
-  nm_product: string;       // Nome do produto
-  id_group?: string; // ID do grupo/categoria vinculado
-  gtin: string;             // Código de barras (GTIN/EAN)
-  tag?: string | null;      // Categoria/Tag retornada pela API
-}
+import { UnifiedProductDTO } from '../../core/api/api.types';
+
+export type ProductResult = UnifiedProductDTO; // Reutiliza a tipagem centralizada das APIs
 
 export interface ScannerQuickState {    // Define a interface do estado da tela do scanner rápido
   visible: boolean;                     // Indica se a interface do leitor está visível na tela

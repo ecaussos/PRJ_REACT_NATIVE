@@ -1,7 +1,7 @@
 // src/core/database/supabaseClient.ts
 
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
-import { ConfigItem, DbClient } from './database';
+import { ConfigItem, DbClient } from '../database';
 
 let supabaseInstance: SupabaseClient | null = null;
 

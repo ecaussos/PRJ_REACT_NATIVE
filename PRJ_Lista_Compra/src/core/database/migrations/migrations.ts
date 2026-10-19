@@ -1,19 +1,19 @@
 // src/database/migrations/migration.ts
 
-import v10 from './v10_buy';
-import v11 from './v11_config_tp';
-import v12 from './v12_insert_config_tp';
-import v13 from './v13_config';
-import v14 from './v14_insert_config';
-import v1 from './v1_supplier';
-import v2 from './v2_group_product';
-import v3 from './v3_insert_group';
-import v4 from './v4_product';
-import v5 from './v5_insert_product';
-import v6 from './v6_from_to_group';
-import v7 from './v7_insert_from_to';
-import v8 from './v8_list_buy';
-import v9 from './v9_hist_buy';
+import v10 from './scripts/v10_buy';
+import v11 from './scripts/v11_config_tp';
+import v12 from './scripts/v12_insert_config_tp';
+import v13 from './scripts/v13_config';
+import v14 from './scripts/v14_insert_config';
+import v1 from './scripts/v1_supplier';
+import v2 from './scripts/v2_group_product';
+import v3 from './scripts/v3_insert_group';
+import v4 from './scripts/v4_product';
+import v5 from './scripts/v5_insert_product';
+import v6 from './scripts/v6_from_to_group';
+import v7 from './scripts/v7_insert_from_to';
+import v8 from './scripts/v8_list_buy';
+import v9 from './scripts/v9_hist_buy';
 
 let migrationsPromise: Promise<void> | null = null;
 let isMigrated = false;

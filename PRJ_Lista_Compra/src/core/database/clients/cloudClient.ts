@@ -2,7 +2,7 @@
 
 import 'react-native-url-polyfill/auto';
 // NOTA: Usar 'import type' evita que o bundler crie a dependência circular no JS compilado
-import type { ConfigItem, DbClient } from './database';
+import type { ConfigItem, DbClient } from '../database';
 import { getSupabaseAdapter, resetSupabaseInstance } from './supabaseClient';
 import { getTursoAdapter, resetTursoInstance } from './tursoClient';
 

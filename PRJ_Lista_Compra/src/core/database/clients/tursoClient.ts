@@ -1,7 +1,7 @@
 // src/core/database/tursoClient.ts
 
 import { createClient as createTursoClient, Client as TursoClient } from '@libsql/client/web';
-import { ConfigItem, DbClient } from './database';
+import { ConfigItem, DbClient } from '../database';
 
 let tursoInstance: TursoClient | null = null;
 

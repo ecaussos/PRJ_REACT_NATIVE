@@ -1,7 +1,7 @@
 // src/core/database/localClient.ts
 
 import * as SQLite from 'expo-sqlite';
-import { DbClient } from './database';
+import { DbClient } from '../database';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
